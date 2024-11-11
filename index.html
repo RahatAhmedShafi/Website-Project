@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" integrity="sha384-dpuaG1suU0eT09tx5plTaGMLBsfDLzUCCUXOY2j/LSvXYuG6Bqs43ALlhIqAJVRb" crossorigin="anonymous">
+    <style>
+        *{
+            padding: 0;
+            margin: 0;
+        }
+        .footer{
+            background-color: rgb(255, 255, 255);
+            color:#767676;
+            text-align: center;
+            height: 50px;
+            position: relative;
+            justify-items: center;
+            justify-content: center;
+            padding: 12px;
+        }
+        pre{
+            position: relative;
+            padding: 0px 12px;
+        }
+        
+       
+    </style>
+    
+    <title>Demo</title>
+  </head>
+  <body>
+    
+
+   
+
+    <div class="fixed-top">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary"data-bs-theme="dark" class="navbar" style="background-color: #b6e1ff;"  >
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">World Info</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="#">Home</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">Blog</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" aria-current="page" href="#">Entertainment</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" aria-current="page" href="#">Community</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" aria-current="page" href="#">Education</a>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Sports
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="#">Football</a></li>
+                  <li><a class="dropdown-item" href="#">Cricket</a></li>
+                  <li><a class="dropdown-item" href="#">Hocky</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="#">Tenis</a></li>
+                </ul>
+              </li>
+              <!-- <li class="nav-item">
+                <a class="nav-link disabled" aria-disabled="true">Disabled</a>
+              </li> -->
+            </ul>
+            <form class="d-flex" role="search">
+              <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+              <button class="btn btn-outline-success" type="submit">Search</button>
+            </form>
+          </div>
+        </div>
+      </nav>
+    </div>
+    
+  
+
+
+      <div id="carouselExampleIndicators" class="carousel slide">
+        <div class="carousel-indicators">
+          <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+          <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1" aria-label="Slide 2"></button>
+          <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2" aria-label="Slide 3"></button>
+          <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="3" aria-label="Slide 4"></button>
+        </div>
+        <div class="carousel-inner">
+          <div class="carousel-item active">
+            
+            <img src="d.jpg" class="d-block w-100" alt="..." height="500vh">
+          </div>
+          <div class="carousel-item">
+            <!-- <img src="https://www.example.com/images/dinosaur.jpg"  class="d-block w-100"alt="Dinosaur" /> -->
+            <img src="https://images.unsplash.com/photo-1470083748587-df49227c0505?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100" alt="..." height="500vh"> 
+          </div>
+          <div class="carousel-item">
+            <img src="https://plus.unsplash.com/premium_photo-1684713510655-e6e31536168d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100" alt="..." height="500vh">
+          </div>
+          <div class="carousel-item">
+            <img src="https://images.unsplash.com/photo-1536463532082-3bc2cf9c2817?q=80&w=2034&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100" alt="..." height="500vh">
+          </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Next</span>
+        </button>
+      </div>
+       <!-- Footer -->
+      <div class="card">
+        <div class="card-header">
+          Quote
+        </div>
+        <div class="card-body">
+          <blockquote class="blockquote mb-0">
+            <p>"Talent wins games, but teamwork and intelligence win championships."</p>
+            <footer class="blockquote-footer"> Michael Jordan<cite title="Source Title"></cite></footer>
+          </blockquote>
+        </div>
+      </div>
+      
+      
+    
+
+
+      <div class="card-group">
+        <div class="card">
+          <img src="https://akm-img-a-in.tosshub.com/indiatoday/images/story/202411/afg-vs-ban-052114188-16x9_0.jpeg?VersionId=SvkBymrijHYg1c.HAQXKZMZ1.hGSUbaH&size=690:388" class="card-img-top" alt="..." height="250px">
+          <div class="card-body">
+            <h5 class="card-title">Ban VS Afg</h5>
+            <p class="card-text">Afghanistan’s ODI series against Bangladesh starts on November 11</p>
+            <a href="https://www.google.com/search?sca_esv=eafd3d4b180998b0&sxsrf=ADLYWIKh85oBLtZ0Tsyj_I11lqYUvVAUWg:1731315749883&q=ban+vs+afg&source=lnms&fbs=AEQNm0Aa4sjWe7Rqy32pFwRj0UkWZJPk1C9buWu--tLPKEpSxLqGfZiWMqdk6VF37sVUbkcCZzyIYxI7k-o7WO4KAo4t7CvQSg4oG_o-ObkfIOhqzUF9qOWeC4Y_9AOTwi9SctJv_jHUfyW9efib6sBh8MSiXEw8qtuY905fG1XI2kbqHwgUKgM&sa=X&ved=2ahUKEwj98Y_i9dOJAxWUwTgGHZnIDVwQ0pQJegQIExAB&biw=1280&bih=551&dpr=1.5#sie=m;/g/11ltm5c0cb;5;/m/021q23;dt;fp;1;;;" class="btn btn-primary">Live Score</a>
+          </div>
+          <div class="card-footer">
+            <small class="text-body-secondary">Last updated 3 mins ago</small>
+          </div>
+        </div>
+        <div class="card">
+          <img src="https://images.news18.com/ibnlive/uploads/2024/11/australia-vs-pakistan-2024-2024-11-c115315b5fde5242a5743a416bfd5211.jpeg?impolicy=website&width=690&height=388" class="card-img-top" alt="..." height="250px">
+          <div class="card-body">
+            <h5 class="card-title">Aus VS Pak</h5>
+            <p class="card-text">PAK beat AUS by 8 wickets to win series 2-1 in Perth</p>
+          </div>
+          <div class="card-footer">
+            <small class="text-body-secondary">Last updated 1 day ago</small>
+          </div>
+        </div>
+        <div class="card">
+          <img src="https://ichef.bbci.co.uk/ace/standard/800/cpsprodpb/2da0/live/d7764c60-9fa1-11ef-8a17-7b4c07dc5728.jpg.webp" class="card-img-top" alt="..." height="250px">
+          <div class="card-body">
+            <h5 class="card-title">Fernandes 'is back' as main man with Amorim era beginning</h5>
+            <p class="card-text">A lot has changed around Manchester United captain Bruno Fernandes since he took it upon himself to apologise directly to Erik ten Hag in the wake of his sacking and accept his share of the blame.</p>
+          </div>
+          <div class="card-footer">
+            <small class="text-body-secondary">Last updated 11 hours ago</small>
+          </div>
+        </div>
+      </div>
+
+
+      <h3 style="margin: 10px;">World Info</h3>
+      <pre><a href="" style="text-decoration: none; position: relative;margin: 10px;color: #767676;">About<a>              <a href=""style="text-decoration: none; position: relative;margin: 10px;color: #767676;">Blog</a></pre></a>
+      <pre><a href="" style="text-decoration: none; position: relative;margin: 10px;color: #767676;">Community<a>          <a href=""style="text-decoration: none; position: relative;margin: 10px;color: #767676;">Press</a></pre></a>
+      <pre><a href="" style="text-decoration: none; position: relative;margin: 10px;color: #767676;">Join the team<a>      <a href=""style="text-decoration: none; position: relative;margin: 10px;color: #767676;">Education</a></pre></a>
+
+      
+      <hr>
+      <footer class="footer">Copyright © 2024</footer>
+
+    <!-- Optional JavaScript; choose one of the two! -->
+
+    <!-- Option 1: Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <!-- Option 2: Separate Popper and Bootstrap JS -->
+    <!--
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    -->
+  </body>
+</html>
