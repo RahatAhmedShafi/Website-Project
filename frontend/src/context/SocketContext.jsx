@@ -21,10 +21,17 @@ export const SocketProvider = ({ children }) => {
     }
 
     // Determine WS protocol and URL
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = process.env.NODE_ENV === 'production' 
-      ? `${protocol}//${window.location.host}?token=${token}`
-      : `ws://localhost:5000?token=${token}`;
+    let wsUrl;
+    const configuredWsUrl = import.meta.env.VITE_WS_URL;
+    if (configuredWsUrl) {
+      const separator = configuredWsUrl.includes('?') ? '&' : '?';
+      wsUrl = `${configuredWsUrl}${separator}token=${token}`;
+    } else {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      wsUrl = process.env.NODE_ENV === 'production' 
+        ? `${protocol}//${window.location.host}?token=${token}`
+        : `ws://localhost:5000?token=${token}`;
+    }
 
     console.log(`Establishing WebSocket connection to ${wsUrl}`);
     const ws = new WebSocket(wsUrl);
