@@ -234,4 +234,131 @@ router.get('/jobs', authMiddleware, async (req, res) => {
   }
 });
 
+// @route   PUT api/utilities/tuition/:id
+// @desc    Update a tuition post (must be the owner)
+router.put('/tuition/:id', authMiddleware, async (req, res) => {
+  const { title, type, subjects, district, area, salary, details, phone } = req.body;
+
+  try {
+    const post = await db.findById('tuition_posts', req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: 'Tuition listing not found' });
+    }
+
+    const postOwnerId = post.user && post.user._id ? post.user._id.toString() : (post.user ? post.user.toString() : '');
+    if (postOwnerId !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized to update this tuition post' });
+    }
+
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (type !== undefined) updateData.type = type;
+    if (subjects !== undefined) updateData.subjects = Array.isArray(subjects) ? subjects : [subjects];
+    if (district !== undefined) updateData.district = district;
+    if (area !== undefined) updateData.area = area;
+    if (salary !== undefined) updateData.salary = salary;
+    if (details !== undefined) updateData.details = details;
+    if (phone !== undefined) updateData.phone = phone;
+
+    const updated = await db.findByIdAndUpdate('tuition_posts', req.params.id, updateData, { new: true });
+    
+    const populated = await db.findById('tuition_posts', updated._id);
+    const userObj = await db.findById('users', req.user.id);
+    if (userObj) {
+      const { password, ...safeUser } = userObj;
+      populated.user = safeUser;
+    }
+
+    res.json(populated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error updating tuition listing' });
+  }
+});
+
+// @route   DELETE api/utilities/tuition/:id
+// @desc    Delete a tuition post (must be the owner)
+router.delete('/tuition/:id', authMiddleware, async (req, res) => {
+  try {
+    const post = await db.findById('tuition_posts', req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: 'Tuition listing not found' });
+    }
+
+    const postOwnerId = post.user && post.user._id ? post.user._id.toString() : (post.user ? post.user.toString() : '');
+    if (postOwnerId !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized to delete this tuition post' });
+    }
+
+    await db.findByIdAndDelete('tuition_posts', req.params.id);
+    res.json({ message: 'Tuition listing deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error deleting tuition listing' });
+  }
+});
+
+// @route   PUT api/utilities/jobs/:id
+// @desc    Update a job posting (must be the owner)
+router.put('/jobs/:id', authMiddleware, async (req, res) => {
+  const { companyName, title, type, description, requirements, salary, link } = req.body;
+
+  try {
+    const job = await db.findById('jobs', req.params.id);
+    if (!job) {
+      return res.status(404).json({ message: 'Job posting not found' });
+    }
+
+    const jobOwnerId = job.user && job.user._id ? job.user._id.toString() : (job.user ? job.user.toString() : '');
+    if (jobOwnerId !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized to update this job posting' });
+    }
+
+    const updateData = {};
+    if (companyName !== undefined) updateData.companyName = companyName;
+    if (title !== undefined) updateData.title = title;
+    if (type !== undefined) updateData.type = type;
+    if (description !== undefined) updateData.description = description;
+    if (requirements !== undefined) updateData.requirements = requirements;
+    if (salary !== undefined) updateData.salary = salary;
+    if (link !== undefined) updateData.link = link;
+
+    const updated = await db.findByIdAndUpdate('jobs', req.params.id, updateData, { new: true });
+    
+    const populated = await db.findById('jobs', updated._id);
+    const userObj = await db.findById('users', req.user.id);
+    if (userObj) {
+      const { password, ...safeUser } = userObj;
+      populated.user = safeUser;
+    }
+
+    res.json(populated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error updating job posting' });
+  }
+});
+
+// @route   DELETE api/utilities/jobs/:id
+// @desc    Delete a job posting (must be the owner)
+router.delete('/jobs/:id', authMiddleware, async (req, res) => {
+  try {
+    const job = await db.findById('jobs', req.params.id);
+    if (!job) {
+      return res.status(404).json({ message: 'Job posting not found' });
+    }
+
+    const jobOwnerId = job.user && job.user._id ? job.user._id.toString() : (job.user ? job.user.toString() : '');
+    if (jobOwnerId !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized to delete this job posting' });
+    }
+
+    await db.findByIdAndDelete('jobs', req.params.id);
+    res.json({ message: 'Job posting deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error deleting job posting' });
+  }
+});
+
 module.exports = router;

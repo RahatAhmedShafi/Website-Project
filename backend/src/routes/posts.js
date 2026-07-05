@@ -183,4 +183,70 @@ router.post('/:id/share', authMiddleware, async (req, res) => {
   }
 });
 
+// @route   PUT api/posts/:id
+// @desc    Update a post (must be the owner)
+router.put('/:id', authMiddleware, async (req, res) => {
+  const { text, image } = req.body;
+
+  try {
+    const post = await db.findById('posts', req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check ownership
+    const postOwnerId = post.user && post.user._id ? post.user._id.toString() : (post.user ? post.user.toString() : '');
+    if (postOwnerId !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized to update this post' });
+    }
+
+    const updateData = {};
+    if (text !== undefined) updateData.text = text;
+    if (image !== undefined) updateData.image = image;
+
+    const updatedPost = await db.findByIdAndUpdate('posts', req.params.id, updateData, { new: true });
+    
+    // Populate user
+    const populated = await db.findById('posts', updatedPost._id);
+    const userObj = await db.findById('users', req.user.id);
+    if (userObj) {
+      const { password, ...safeUser } = userObj;
+      populated.user = safeUser;
+    }
+
+    res.json(populated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error updating post' });
+  }
+});
+
+// @route   DELETE api/posts/:id
+// @desc    Delete a post (must be the owner)
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const post = await db.findById('posts', req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check ownership
+    const postOwnerId = post.user && post.user._id ? post.user._id.toString() : (post.user ? post.user.toString() : '');
+    if (postOwnerId !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized to delete this post' });
+    }
+
+    await db.findByIdAndDelete('posts', req.params.id);
+    
+    // Clean up associated comments and notifications
+    await db.deleteMany('comments', { post: req.params.id });
+    await db.deleteMany('notifications', { post: req.params.id });
+
+    res.json({ message: 'Post deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error deleting post' });
+  }
+});
+
 module.exports = router;

@@ -11,6 +11,7 @@ import {
   Globe, 
   UserPlus, 
   Trash2,
+  Edit2,
   Calendar,
   MapPin,
   Map
@@ -196,6 +197,9 @@ export default function Feed({ communityId = null }) {
     }
   };
 
+  const [editingPost, setEditingPost] = useState(null);
+  const [deletingPostId, setDeletingPostId] = useState(null);
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 py-6 px-4">
       
@@ -280,6 +284,14 @@ export default function Feed({ communityId = null }) {
             const hasLiked = post.likes?.includes(user?._id);
             const isCommentsOpen = activeCommentsPostId === post._id;
 
+            console.log("Post owner debug:", {
+              postId: post._id,
+              postText: post.text?.substring(0, 20),
+              postUserId: post.user?._id || post.user,
+              currentUserId: user?._id,
+              isMatch: (post.user?._id || post.user) === user?._id
+            });
+
             return (
               <div key={post._id} className="glass-panel rounded-3xl p-5 border border-white/5 flex flex-col gap-4">
                 
@@ -302,6 +314,26 @@ export default function Feed({ communityId = null }) {
                       </p>
                     </div>
                   </div>
+
+                  {/* Edit/Delete Actions for Post Owner */}
+                  {((post.user?._id || post.user) === user?._id) && (
+                    <div className="flex items-center gap-1.5 shrink-0">
+                       <button 
+                        onClick={() => setEditingPost({ _id: post._id, text: post.text })}
+                        className="p-2 hover:bg-emerald-500/10 hover:text-emerald-400 rounded-xl text-gray-500 transition-all cursor-pointer"
+                        title="Edit Post"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => setDeletingPostId(post._id)}
+                        className="p-2 hover:bg-red-500/10 hover:text-red-400 rounded-xl text-gray-500 transition-all cursor-pointer"
+                        title="Delete Post"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Post Content */}
@@ -402,6 +434,101 @@ export default function Feed({ communityId = null }) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Custom Edit Post Modal */}
+      {editingPost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="glass-panel rounded-3xl w-full max-w-md p-6 border border-white/10 relative animate-scaleIn">
+            <h3 className="text-lg font-extrabold text-white mb-4">Edit Publication</h3>
+            <textarea
+              value={editingPost.text}
+              onChange={(e) => setEditingPost({ ...editingPost, text: e.target.value })}
+              rows={4}
+              className="w-full bg-[#111827] border border-white/10 rounded-2xl p-4 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/50"
+              placeholder="What's on your mind?"
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={() => setEditingPost(null)}
+                className="bg-white/5 hover:bg-white/10 text-gray-400 font-bold px-4 py-2 rounded-xl border border-white/5 text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/posts/${editingPost._id}`, {
+                      method: 'PUT',
+                      headers: getHeaders(),
+                      body: JSON.stringify({ text: editingPost.text })
+                    });
+
+                    if (res.ok) {
+                      const updated = await res.json();
+                      setPosts(posts.map(p => p._id === editingPost._id ? { ...p, text: updated.text } : p));
+                      setEditingPost(null);
+                    } else {
+                      const data = await res.json();
+                      alert(data.message || 'Failed to update post');
+                    }
+                  } catch (err) {
+                    console.error(err);
+                  }
+                }}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-2 rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Delete Post Modal */}
+      {deletingPostId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="glass-panel rounded-3xl w-full max-w-sm p-6 border border-white/10 relative animate-scaleIn text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6 animate-bounce" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-white">Delete Publication?</h3>
+              <p className="text-xs text-gray-400 mt-1">This action cannot be undone. Are you sure you want to delete this post?</p>
+            </div>
+            <div className="flex gap-3 pt-2 justify-center">
+              <button
+                onClick={() => setDeletingPostId(null)}
+                className="bg-white/5 hover:bg-white/10 text-gray-400 font-bold px-4 py-2 rounded-xl border border-white/5 text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/posts/${deletingPostId}`, {
+                      method: 'DELETE',
+                      headers: getHeaders()
+                    });
+
+                    if (res.ok) {
+                      setPosts(posts.filter(p => p._id !== deletingPostId));
+                      setDeletingPostId(null);
+                    } else {
+                      const data = await res.json();
+                      alert(data.message || 'Failed to delete post');
+                    }
+                  } catch (err) {
+                    console.error(err);
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-500 text-white font-bold px-5 py-2 rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -9,7 +9,8 @@ import {
   Building, 
   ArrowUpRight, 
   X,
-  Check
+  Check,
+  Trash2
 } from 'lucide-react';
 
 export default function Jobs() {
@@ -109,6 +110,8 @@ export default function Jobs() {
       alert("Application submitted successfully! The hiring company will review your Vibora profile details.");
     }
   };
+
+  const [deletingJobId, setDeletingJobId] = useState(null);
 
   const jobTypes = ['Internship', 'Part-time', 'Remote', 'Full-time'];
 
@@ -223,7 +226,7 @@ export default function Jobs() {
                   <button
                     onClick={() => handleApply(job._id)}
                     disabled={hasApplied}
-                    className={`w-full py-2 px-4 rounded-xl text-[10px] font-bold text-center transition-all ${
+                    className={`w-full py-2 px-4 rounded-xl text-[10px] font-bold text-center transition-all cursor-pointer ${
                       hasApplied 
                         ? 'bg-transparent border border-emerald-500/20 text-emerald-400 cursor-not-allowed' 
                         : 'bg-emerald-600 hover:bg-emerald-500 text-white'
@@ -237,11 +240,20 @@ export default function Jobs() {
                       href={job.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full bg-[#1f2937] hover:bg-[#374151] text-gray-200 border border-white/5 py-2 px-4 rounded-xl text-[10px] font-bold text-center flex items-center justify-center gap-1"
+                      className="w-full bg-[#1f2937] hover:bg-[#374151] text-gray-200 border border-white/5 py-2 px-4 rounded-xl text-[10px] font-bold text-center flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <span>External Link</span>
                       <ArrowUpRight className="w-3 h-3" />
                     </a>
+                  )}
+
+                  {((job.user?._id || job.user) === user?._id) && (
+                    <button
+                      onClick={() => setDeletingJobId(job._id)}
+                      className="w-full bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/20 py-2 px-4 rounded-xl text-[10px] font-bold text-center transition-colors cursor-pointer"
+                    >
+                      Delete
+                    </button>
                   )}
                 </div>
               </div>
@@ -387,6 +399,52 @@ export default function Jobs() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Delete Job Modal */}
+      {deletingJobId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="glass-panel rounded-3xl w-full max-w-sm p-6 border border-white/10 relative animate-scaleIn text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6 animate-bounce" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-white">Delete Job Posting?</h3>
+              <p className="text-xs text-gray-400 mt-1">This action cannot be undone. Are you sure you want to delete this job listing?</p>
+            </div>
+            <div className="flex gap-3 pt-2 justify-center">
+              <button
+                onClick={() => setDeletingJobId(null)}
+                className="bg-white/5 hover:bg-white/10 text-gray-400 font-bold px-4 py-2 rounded-xl border border-white/5 text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/utilities/jobs/${deletingJobId}`, {
+                      method: 'DELETE',
+                      headers: getHeaders()
+                    });
+
+                    if (res.ok) {
+                      setJobs(jobs.filter(j => j._id !== deletingJobId));
+                      setDeletingJobId(null);
+                    } else {
+                      const data = await res.json();
+                      alert(data.message || 'Failed to delete job posting');
+                    }
+                  } catch (err) {
+                    console.error(err);
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-500 text-white font-bold px-5 py-2 rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

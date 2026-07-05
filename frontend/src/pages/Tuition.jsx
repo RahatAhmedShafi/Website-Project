@@ -11,7 +11,8 @@ import {
   DollarSign, 
   GraduationCap, 
   X,
-  Check
+  Check,
+  Trash2
 } from 'lucide-react';
 
 export default function Tuition() {
@@ -117,6 +118,8 @@ export default function Tuition() {
       setError('Connection failure');
     }
   };
+
+  const [deletingPostId, setDeletingPostId] = useState(null);
 
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 space-y-6">
@@ -268,13 +271,24 @@ export default function Tuition() {
                   <span className="text-xs font-semibold text-gray-400">{post.user?.name}</span>
                 </div>
 
-                <a
-                  href={`tel:${post.phone}`}
-                  className="bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 font-bold px-4 py-1.5 rounded-xl text-[10px] flex items-center gap-1 transition-colors"
-                >
-                  <Phone className="w-3 h-3" />
-                  <span>Contact</span>
-                </a>
+                <div className="flex items-center gap-2">
+                  {((post.user?._id || post.user) === user?._id) && (
+                    <button 
+                      onClick={() => setDeletingPostId(post._id)}
+                      className="p-1.5 hover:bg-red-500/10 hover:text-red-400 rounded-xl text-gray-500 border border-transparent transition-all cursor-pointer flex items-center justify-center shrink-0"
+                      title="Delete Tuition Listing"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <a
+                    href={`tel:${post.phone}`}
+                    className="bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 font-bold px-4 py-1.5 rounded-xl text-[10px] flex items-center gap-1 transition-colors shrink-0"
+                  >
+                    <Phone className="w-3 h-3" />
+                    <span>Contact</span>
+                  </a>
+                </div>
               </div>
             </div>
           ))}
@@ -449,6 +463,52 @@ export default function Tuition() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Delete Tuition Modal */}
+      {deletingPostId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="glass-panel rounded-3xl w-full max-w-sm p-6 border border-white/10 relative animate-scaleIn text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6 animate-bounce" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-white">Delete Tuition listing?</h3>
+              <p className="text-xs text-gray-400 mt-1">This action cannot be undone. Are you sure you want to delete this listing?</p>
+            </div>
+            <div className="flex gap-3 pt-2 justify-center">
+              <button
+                onClick={() => setDeletingPostId(null)}
+                className="bg-white/5 hover:bg-white/10 text-gray-400 font-bold px-4 py-2 rounded-xl border border-white/5 text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/utilities/tuition/${deletingPostId}`, {
+                      method: 'DELETE',
+                      headers: getHeaders()
+                    });
+
+                    if (res.ok) {
+                      setPosts(posts.filter(p => p._id !== deletingPostId));
+                      setDeletingPostId(null);
+                    } else {
+                      const data = await res.json();
+                      alert(data.message || 'Failed to delete tuition listing');
+                    }
+                  } catch (err) {
+                    console.error(err);
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-500 text-white font-bold px-5 py-2 rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}
