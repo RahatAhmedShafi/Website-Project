@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../config/db');
 const authMiddleware = require('../middleware/auth');
+const { createAndSendNotification } = require('../utils/notificationHelper');
 
 // ==========================================
 // 🩸 BLOOD DONOR ROUTING
@@ -109,6 +110,14 @@ router.post('/tuition', authMiddleware, async (req, res) => {
     if (userObj) {
       const { password, ...safeUser } = userObj;
       populated.user = safeUser;
+
+      // Notify followers/friends of new tuition post
+      const followers = userObj.followers || [];
+      const friends = userObj.friends || [];
+      const notifyUsers = Array.from(new Set([...followers, ...friends].map(id => id.toString())));
+      for (const recipientId of notifyUsers) {
+        await createAndSendNotification(recipientId, req.user.id, 'tuition', null);
+      }
     }
 
     res.status(201).json(populated);
@@ -178,6 +187,14 @@ router.post('/jobs', authMiddleware, async (req, res) => {
     if (userObj) {
       const { password, ...safeUser } = userObj;
       populated.user = safeUser;
+
+      // Notify followers/friends of new job post
+      const followers = userObj.followers || [];
+      const friends = userObj.friends || [];
+      const notifyUsers = Array.from(new Set([...followers, ...friends].map(id => id.toString())));
+      for (const recipientId of notifyUsers) {
+        await createAndSendNotification(recipientId, req.user.id, 'job', null);
+      }
     }
 
     res.status(201).json(populated);

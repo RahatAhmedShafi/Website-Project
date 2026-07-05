@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../config/db');
 const authMiddleware = require('../middleware/auth');
+const { createAndSendNotification } = require('../utils/notificationHelper');
 
 // @route   POST api/posts
 // @desc    Create a post (text and/or image, optional community, noticeCategory if isNotice is true)
@@ -27,6 +28,14 @@ router.post('/', authMiddleware, async (req, res) => {
     if (userObj) {
       const { password, ...safeUser } = userObj;
       populatedPost.user = safeUser;
+
+      // Notify all followers/friends of new post activity
+      const followers = userObj.followers || [];
+      const friends = userObj.friends || [];
+      const notifyUsers = Array.from(new Set([...followers, ...friends].map(id => id.toString())));
+      for (const recipientId of notifyUsers) {
+        await createAndSendNotification(recipientId, req.user.id, 'post', newPost._id);
+      }
     }
 
     res.status(201).json(populatedPost);
@@ -43,7 +52,12 @@ router.get('/', authMiddleware, async (req, res) => {
 
   try {
     const filter = {};
-    if (community) filter.community = community;
+    if (community) {
+      filter.community = community;
+    } else if (isNotice === undefined) {
+      // Isolate community posts from global homepage feed
+      filter.community = null;
+    }
     if (isNotice !== undefined) filter.isNotice = isNotice === 'true';
     if (noticeCategory) filter.noticeCategory = noticeCategory;
 
@@ -81,13 +95,7 @@ router.post('/:id/like', authMiddleware, async (req, res) => {
       
       // Create notification for post owner if it's not the current user
       if (post.user.toString() !== req.user.id) {
-        await db.create('notifications', {
-          recipient: post.user,
-          sender: req.user.id,
-          type: 'like',
-          post: post._id,
-          read: false
-        });
+        await createAndSendNotification(post.user, req.user.id, 'like', post._id);
       }
     }
 
@@ -147,13 +155,7 @@ router.post('/:id/comment', authMiddleware, async (req, res) => {
 
     // Create notification for post owner if it's not the current user
     if (post.user.toString() !== req.user.id) {
-      await db.create('notifications', {
-        recipient: post.user,
-        sender: req.user.id,
-        type: 'comment',
-        post: post._id,
-        read: false
-      });
+      await createAndSendNotification(post.user, req.user.id, 'comment', post._id);
     }
 
     res.status(201).json(comment);

@@ -1,7 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { SocketProvider } from './context/SocketContext';
+import { SocketProvider, useSocket } from './context/SocketContext';
+import { MessageSquare, Bell, X } from 'lucide-react';
 
 // Components
 import Navbar from './components/Navbar';
@@ -37,10 +38,94 @@ const PrivateRoute = ({ children }) => {
 
 function AppRoutes() {
   const { user } = useAuth();
-  
+  const navigate = useNavigate();
+  const { incomingNotification, setIncomingNotification, incomingMessage, setIncomingMessage } = useSocket();
+  const [toast, setToast] = React.useState(null);
+
+  React.useEffect(() => {
+    if (incomingNotification) {
+      if (window.location.pathname !== '/notifications') {
+        let bodyText = '';
+        const senderName = incomingNotification.sender?.name || 'Someone';
+        if (incomingNotification.type === 'like') bodyText = `${senderName} liked your publication.`;
+        else if (incomingNotification.type === 'comment') bodyText = `${senderName} commented on your publication.`;
+        else if (incomingNotification.type === 'follow') bodyText = `${senderName} started following you.`;
+        else if (incomingNotification.type === 'friend_request') bodyText = `${senderName} sent you a friend request.`;
+        else if (incomingNotification.type === 'friend_accept') bodyText = `${senderName} accepted your friend request.`;
+        else if (incomingNotification.type === 'post') bodyText = `${senderName} published a new publication.`;
+        else if (incomingNotification.type === 'tuition') bodyText = `${senderName} posted a new tuition update.`;
+        else if (incomingNotification.type === 'job') bodyText = `${senderName} posted a new job listing.`;
+        else bodyText = 'You have a new notification.';
+
+        setToast({
+          type: 'notification',
+          title: 'Alert',
+          body: bodyText,
+          link: '/notifications'
+        });
+
+        // Auto hide
+        const timer = setTimeout(() => setToast(null), 4000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [incomingNotification]);
+
+  React.useEffect(() => {
+    if (incomingMessage) {
+      const queryParams = new URLSearchParams(window.location.search);
+      const isViewingThisChat = window.location.pathname === '/chat' && queryParams.get('userId') === incomingMessage.sender;
+      
+      if (!isViewingThisChat) {
+        const bodyText = incomingMessage.text || 'Sent you a direct message.';
+        
+        setToast({
+          type: 'message',
+          title: 'New Message',
+          body: bodyText,
+          link: `/chat?userId=${incomingMessage.sender}`
+        });
+
+        // Auto hide
+        const timer = setTimeout(() => setToast(null), 4000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [incomingMessage]);
+
   return (
-    <div className="min-h-screen bg-[#0b0f17] flex flex-col">
+    <div className="min-h-screen bg-[#0b0f17] flex flex-col relative">
       {user && <Navbar />}
+
+      {/* Real-time floating toast notifier */}
+      {toast && (
+        <div 
+          onClick={() => {
+            navigate(toast.link);
+            setToast(null);
+          }}
+          className="fixed top-20 right-4 z-50 max-w-sm w-full bg-[#111827]/90 backdrop-blur-md border border-emerald-500/30 hover:border-emerald-500/50 shadow-2xl rounded-2xl p-4 flex gap-3 items-start cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] animate-slideInRight"
+        >
+          <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl shrink-0">
+            {toast.type === 'message' ? <MessageSquare className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-xs font-black uppercase tracking-widest text-emerald-400">{toast.title}</h4>
+            <p className="text-sm text-gray-200 mt-1 truncate">{toast.body}</p>
+            <p className="text-[10px] text-gray-500 mt-1 font-medium">Click to view details</p>
+          </div>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setToast(null);
+            }}
+            className="text-gray-500 hover:text-gray-300 p-0.5 rounded-lg cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <main className="flex-1 w-full max-w-7xl mx-auto px-4">
         <Routes>
           {/* Public routes */}

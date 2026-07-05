@@ -20,18 +20,33 @@ import {
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-  const { incomingNotification } = useSocket();
+  const { incomingNotification, incomingMessage } = useSocket();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [unreadNotifications, setUnreadNotifications] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(false);
 
   React.useEffect(() => {
     if (incomingNotification) {
       setUnreadNotifications(true);
     }
   }, [incomingNotification]);
+
+  React.useEffect(() => {
+    if (incomingMessage) {
+      if (location.pathname !== '/chat') {
+        setUnreadMessages(true);
+      }
+    }
+  }, [incomingMessage, location.pathname]);
+
+  React.useEffect(() => {
+    if (location.pathname === '/chat') {
+      setUnreadMessages(false);
+    }
+  }, [location.pathname]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -112,6 +127,9 @@ export default function Navbar() {
           {/* Direct Messages */}
           <Link to="/chat" className="p-2 hover:bg-white/5 rounded-full text-gray-400 hover:text-white relative">
             <MessageSquare className="w-5 h-5" />
+            {unreadMessages && (
+              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#0b0f17]" />
+            )}
           </Link>
 
           {/* Notifications */}

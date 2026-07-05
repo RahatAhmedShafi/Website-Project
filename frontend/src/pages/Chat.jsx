@@ -5,7 +5,7 @@ import { useSocket } from '../context/SocketContext';
 import { Send, MessageSquare, User, Smile, Shield } from 'lucide-react';
 
 export default function Chat() {
-  const { user: currentUser, getHeaders } = useAuth();
+  const { user: currentUser, getHeaders, getFriends } = useAuth();
   const { incomingMessage, setIncomingMessage } = useSocket();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -14,6 +14,8 @@ export default function Chat() {
   const targetUserId = searchParams.get('userId');
 
   const [chatUsers, setChatUsers] = useState([]);
+  const [friends, setFriends] = useState([]);
+  const [activeTab, setActiveTab] = useState('chats'); // 'chats' | 'friends'
   const [activePartner, setActivePartner] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
@@ -79,8 +81,18 @@ export default function Chat() {
     }
   };
 
+  const fetchFriends = async () => {
+    try {
+      const list = await getFriends();
+      setFriends(list);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     fetchChatUsers();
+    fetchFriends();
   }, [targetUserId]);
 
   useEffect(() => {
@@ -159,47 +171,108 @@ export default function Chat() {
             <span>Conversations</span>
           </h2>
 
+          {/* Tabs */}
+          <div className="flex gap-2 p-1 bg-white/5 rounded-2xl shrink-0">
+            <button 
+              onClick={() => setActiveTab('chats')}
+              className={`flex-1 text-[11px] font-bold py-2 rounded-xl transition-all cursor-pointer ${
+                activeTab === 'chats' 
+                  ? 'bg-emerald-600 text-white' 
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Recent
+            </button>
+            <button 
+              onClick={() => setActiveTab('friends')}
+              className={`flex-1 text-[11px] font-bold py-2 rounded-xl transition-all cursor-pointer ${
+                activeTab === 'friends' 
+                  ? 'bg-emerald-600 text-white' 
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Friends ({friends.length})
+            </button>
+          </div>
+
           <div className="overflow-y-auto flex-1 space-y-2 pr-1">
-            {loadingUsers ? (
-              <p className="text-center text-xs text-gray-500 py-6">Loading conversations...</p>
-            ) : chatUsers.length === 0 ? (
-              <p className="text-center text-xs text-gray-500 py-8">No chats active yet.</p>
+            {activeTab === 'chats' ? (
+              loadingUsers ? (
+                <p className="text-center text-xs text-gray-500 py-6">Loading conversations...</p>
+              ) : chatUsers.length === 0 ? (
+                <p className="text-center text-xs text-gray-500 py-8">No chats active yet.</p>
+              ) : (
+                chatUsers.map((threadUser) => {
+                  const isActive = activePartner && activePartner._id === threadUser._id;
+                  return (
+                    <button
+                      key={threadUser._id}
+                      onClick={() => handleSelectPartner(threadUser)}
+                      className={`w-full text-left p-3 rounded-2xl flex items-center gap-3 transition-all border cursor-pointer ${
+                        isActive 
+                          ? 'bg-emerald-500/10 border-emerald-500/20 text-white' 
+                          : 'bg-[#111827]/40 border-transparent hover:bg-white/5 text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      {threadUser.profilePicture ? (
+                        <img src={threadUser.profilePicture} alt={threadUser.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold uppercase shrink-0">
+                          {threadUser.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="flex-1 overflow-hidden">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-xs truncate max-w-[120px]">{threadUser.name}</span>
+                          {threadUser.latestMessage && (
+                            <span className="text-[9px] text-gray-500 shrink-0">
+                              {new Date(threadUser.latestMessage.createdAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                          {threadUser.latestMessage ? threadUser.latestMessage.text : 'Click to send message'}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })
+              )
             ) : (
-              chatUsers.map((threadUser) => {
-                const isActive = activePartner && activePartner._id === threadUser._id;
-                return (
-                  <button
-                    key={threadUser._id}
-                    onClick={() => handleSelectPartner(threadUser)}
-                    className={`w-full text-left p-3 rounded-2xl flex items-center gap-3 transition-all border ${
-                      isActive 
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-white' 
-                        : 'bg-[#111827]/40 border-transparent hover:bg-white/5 text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    {threadUser.profilePicture ? (
-                      <img src={threadUser.profilePicture} alt={threadUser.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold uppercase shrink-0">
-                        {threadUser.name.charAt(0)}
+              friends.length === 0 ? (
+                <p className="text-center text-xs text-gray-500 py-8">No friends added yet.</p>
+              ) : (
+                friends.map((friend) => {
+                  const isActive = activePartner && activePartner._id === friend._id;
+                  return (
+                    <button
+                      key={friend._id}
+                      onClick={() => handleSelectPartner(friend)}
+                      className={`w-full text-left p-3 rounded-2xl flex items-center gap-3 transition-all border cursor-pointer ${
+                        isActive 
+                          ? 'bg-emerald-500/10 border-emerald-500/20 text-white' 
+                          : 'bg-[#111827]/40 border-transparent hover:bg-white/5 text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      {friend.profilePicture ? (
+                        <img src={friend.profilePicture} alt={friend.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold uppercase shrink-0">
+                          {friend.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="flex-1 overflow-hidden">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-xs truncate">{friend.name}</span>
+                        </div>
+                        <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                          {friend.university || friend.district || 'Vibora Connection'}
+                        </p>
                       </div>
-                    )}
-                    <div className="flex-1 overflow-hidden">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-xs truncate max-w-[120px]">{threadUser.name}</span>
-                        {threadUser.latestMessage && (
-                          <span className="text-[9px] text-gray-500 shrink-0">
-                            {new Date(threadUser.latestMessage.createdAt).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-gray-500 truncate mt-0.5">
-                        {threadUser.latestMessage ? threadUser.latestMessage.text : 'Click to send message'}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })
+                    </button>
+                  );
+                })
+              )
             )}
           </div>
         </div>

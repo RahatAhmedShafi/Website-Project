@@ -80,7 +80,7 @@ const db = {
   // Find multiple documents
   find: async (collection, query = {}, options = {}) => {
     if (isMongoConnected) {
-      const model = mongoose.connection.model(collection);
+      const model = mongoose.model(collection);
       let q = model.find(query);
       if (options.sort) q = q.sort(options.sort);
       if (options.limit) q = q.limit(options.limit);
@@ -92,7 +92,27 @@ const db = {
       
       // Filter list based on query keys
       list = list.filter(item => {
+        // Support $or array matching
+        if (query.$or && Array.isArray(query.$or)) {
+          const matchOr = query.$or.some(orQuery => {
+            for (let key in orQuery) {
+              const val = orQuery[key];
+              if (val && typeof val === 'object' && !Array.isArray(val)) {
+                if (val.$regex) {
+                  const regex = new RegExp(val.$regex, val.$options || 'i');
+                  if (regex.test(item[key] || '')) return true;
+                }
+              } else if (item[key] === val) {
+                return true;
+              }
+            }
+            return false;
+          });
+          if (!matchOr) return false;
+        }
+
         for (let key in query) {
+          if (key === '$or') continue;
           if (query[key] && typeof query[key] === 'object' && !Array.isArray(query[key])) {
             // Support simple search queries (e.g. $regex)
             if (query[key].$regex) {
@@ -134,9 +154,9 @@ const db = {
           const newItem = { ...item };
           populateFields.forEach(field => {
             const fieldPath = typeof field === 'string' ? field : field.path;
-            const refCollection = fieldPath === 'user' || fieldPath === 'author' ? 'users' : 
-                                  fieldPath === 'posts' ? 'posts' : 
-                                  fieldPath === 'comments' ? 'comments' : null;
+            const refCollection = fieldPath === 'user' || fieldPath === 'author' || fieldPath === 'sender' || fieldPath === 'recipient' ? 'users' : 
+                                  fieldPath === 'posts' || fieldPath === 'post' ? 'posts' : 
+                                  fieldPath === 'comments' || fieldPath === 'comment' ? 'comments' : null;
             if (refCollection && newItem[fieldPath]) {
               const refId = newItem[fieldPath].toString();
               const refObj = (localData[refCollection] || []).find(r => r._id === refId);
@@ -158,7 +178,7 @@ const db = {
   // Find single document
   findOne: async (collection, query = {}) => {
     if (isMongoConnected) {
-      const model = mongoose.connection.model(collection);
+      const model = mongoose.model(collection);
       return await model.findOne(query).lean();
     } else {
       const results = await db.find(collection, query);
@@ -169,7 +189,7 @@ const db = {
   // Find document by ID
   findById: async (collection, id) => {
     if (isMongoConnected) {
-      const model = mongoose.connection.model(collection);
+      const model = mongoose.model(collection);
       return await model.findById(id).lean();
     } else {
       const results = await db.find(collection, { _id: id.toString() });
@@ -180,7 +200,7 @@ const db = {
   // Create new document
   create: async (collection, docData) => {
     if (isMongoConnected) {
-      const model = mongoose.connection.model(collection);
+      const model = mongoose.model(collection);
       const newDoc = new model(docData);
       const saved = await newDoc.save();
       return saved.toObject();
@@ -203,7 +223,7 @@ const db = {
   // Find document by ID and update it
   findByIdAndUpdate: async (collection, id, updateData, options = { new: true }) => {
     if (isMongoConnected) {
-      const model = mongoose.connection.model(collection);
+      const model = mongoose.model(collection);
       return await model.findByIdAndUpdate(id, updateData, options).lean();
     } else {
       const data = readLocalDB();
@@ -244,7 +264,7 @@ const db = {
   // Update multiple documents
   updateMany: async (collection, query, updateData) => {
     if (isMongoConnected) {
-      const model = mongoose.connection.model(collection);
+      const model = mongoose.model(collection);
       return await model.updateMany(query, updateData);
     } else {
       const data = readLocalDB();
@@ -275,7 +295,7 @@ const db = {
   // Delete a single document by ID
   findByIdAndDelete: async (collection, id) => {
     if (isMongoConnected) {
-      const model = mongoose.connection.model(collection);
+      const model = mongoose.model(collection);
       return await model.findByIdAndDelete(id).lean();
     } else {
       const data = readLocalDB();
@@ -292,7 +312,7 @@ const db = {
   // Delete many documents matching query
   deleteMany: async (collection, query) => {
     if (isMongoConnected) {
-      const model = mongoose.connection.model(collection);
+      const model = mongoose.model(collection);
       return await model.deleteMany(query);
     } else {
       const data = readLocalDB();

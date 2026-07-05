@@ -12,7 +12,10 @@ const UserSchema = new Schema({
   bio: { type: String, default: '' },
   profilePicture: { type: String, default: '' },
   followers: [{ type: Schema.Types.ObjectId, ref: 'users' }],
-  following: [{ type: Schema.Types.ObjectId, ref: 'users' }]
+  following: [{ type: Schema.Types.ObjectId, ref: 'users' }],
+  friends: [{ type: Schema.Types.ObjectId, ref: 'users' }],
+  friendRequests: [{ type: Schema.Types.ObjectId, ref: 'users' }],
+  sentFriendRequests: [{ type: Schema.Types.ObjectId, ref: 'users' }]
 }, { timestamps: true });
 
 // 2. Post Schema

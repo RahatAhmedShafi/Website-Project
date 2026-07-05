@@ -143,8 +143,96 @@ export const AuthProvider = ({ children }) => {
     return data.followed;
   };
 
+  const sendFriendRequest = async (targetId) => {
+    const response = await fetch(`/api/auth/users/${targetId}/friend-request`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Friend request failed');
+    }
+
+    // Refresh current user
+    const userMeResponse = await fetch('/api/auth/me', { headers: getHeaders() });
+    if (userMeResponse.ok) {
+      const u = await userMeResponse.json();
+      setUser(u);
+    }
+    return data.status;
+  };
+
+  const acceptFriendRequest = async (targetId) => {
+    const response = await fetch(`/api/auth/users/${targetId}/accept-friend`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Accept friend request failed');
+    }
+
+    // Refresh current user
+    const userMeResponse = await fetch('/api/auth/me', { headers: getHeaders() });
+    if (userMeResponse.ok) {
+      const u = await userMeResponse.json();
+      setUser(u);
+    }
+    return data.status;
+  };
+
+  const declineFriendRequest = async (targetId) => {
+    const response = await fetch(`/api/auth/users/${targetId}/decline-friend`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Decline friend request failed');
+    }
+
+    // Refresh current user
+    const userMeResponse = await fetch('/api/auth/me', { headers: getHeaders() });
+    if (userMeResponse.ok) {
+      const u = await userMeResponse.json();
+      setUser(u);
+    }
+    return data.status;
+  };
+
+  const unfriendUser = async (targetId) => {
+    const response = await fetch(`/api/auth/users/${targetId}/unfriend`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Unfriend operation failed');
+    }
+
+    // Refresh current user
+    const userMeResponse = await fetch('/api/auth/me', { headers: getHeaders() });
+    if (userMeResponse.ok) {
+      const u = await userMeResponse.json();
+      setUser(u);
+    }
+    return data.status;
+  };
+
+  const getFriends = async () => {
+    const response = await fetch('/api/auth/friends', { headers: getHeaders() });
+    if (response.ok) {
+      return await response.json();
+    }
+    return [];
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, googleLogin, logout, updateProfile, followUser, getHeaders }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, googleLogin, logout, updateProfile, followUser, sendFriendRequest, acceptFriendRequest, declineFriendRequest, unfriendUser, getFriends, getHeaders }}>
       {children}
     </AuthContext.Provider>
   );

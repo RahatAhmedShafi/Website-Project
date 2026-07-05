@@ -3,10 +3,28 @@ import { useAuth } from '../context/AuthContext';
 import { Bell, Heart, MessageCircle, UserPlus, Check, Sparkles } from 'lucide-react';
 
 export default function Notifications() {
-  const { user, getHeaders } = useAuth();
+  const { user, getHeaders, acceptFriendRequest, declineFriendRequest } = useAuth();
   
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const handleAccept = async (senderId) => {
+    try {
+      await acceptFriendRequest(senderId);
+      fetchNotifications();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDecline = async (senderId) => {
+    try {
+      await declineFriendRequest(senderId);
+      fetchNotifications();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -37,6 +55,8 @@ export default function Notifications() {
       case 'like': return <Heart className="w-4 h-4 text-red-500 fill-current" />;
       case 'comment': return <MessageCircle className="w-4 h-4 text-emerald-400" />;
       case 'follow': return <UserPlus className="w-4 h-4 text-teal-400" />;
+      case 'friend_request': return <UserPlus className="w-4 h-4 text-emerald-400 animate-pulse" />;
+      case 'friend_accept': return <UserPlus className="w-4 h-4 text-teal-400" />;
       default: return <Bell className="w-4 h-4 text-amber-400" />;
     }
   };
@@ -82,7 +102,28 @@ export default function Notifications() {
                   {alert.type === 'like' && 'liked your publication.'}
                   {alert.type === 'comment' && 'commented on your publication.'}
                   {alert.type === 'follow' && 'started following you.'}
+                  {alert.type === 'friend_request' && 'sent you a friend request.'}
+                  {alert.type === 'friend_accept' && 'accepted your friend request.'}
+                  {alert.type === 'post' && 'published a new publication.'}
+                  {alert.type === 'tuition' && 'posted a new tuition update.'}
+                  {alert.type === 'job' && 'posted a new job listing.'}
                 </p>
+                {alert.type === 'friend_request' && alert.sender && (
+                  <div className="flex gap-2 mt-2.5">
+                    <button 
+                      onClick={() => handleAccept(alert.sender._id)}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+                    >
+                      Accept
+                    </button>
+                    <button 
+                      onClick={() => handleDecline(alert.sender._id)}
+                      className="bg-white/5 hover:bg-white/10 text-gray-400 text-[10px] font-bold px-3 py-1.5 rounded-xl border border-white/5 transition-colors cursor-pointer"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                )}
                 <p className="text-[10px] text-gray-500 mt-1">
                   {new Date(alert.createdAt).toLocaleString()}
                 </p>

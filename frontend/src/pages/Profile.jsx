@@ -14,13 +14,14 @@ import {
   Check, 
   Camera,
   Trash2,
-  Lock
+  Lock,
+  UserPlus
 } from 'lucide-react';
 
 export default function Profile() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user: currentUser, getHeaders, updateProfile, followUser } = useAuth();
+  const { user: currentUser, getHeaders, updateProfile, followUser, sendFriendRequest, acceptFriendRequest, declineFriendRequest, unfriendUser } = useAuth();
   
   // Target profile user ID (default to current user if no parameter matches)
   const profileId = id || currentUser?._id;
@@ -160,6 +161,44 @@ export default function Profile() {
     }
   };
 
+  const handleFriendRequest = async () => {
+    try {
+      await sendFriendRequest(profileId);
+      fetchProfile();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleAcceptFriend = async () => {
+    try {
+      await acceptFriendRequest(profileId);
+      fetchProfile();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeclineFriend = async () => {
+    try {
+      await declineFriendRequest(profileId);
+      fetchProfile();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUnfriend = async () => {
+    if (window.confirm("Are you sure you want to remove this friend?")) {
+      try {
+        await unfriendUser(profileId);
+        fetchProfile();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="text-center py-24">
@@ -178,6 +217,9 @@ export default function Profile() {
   }
 
   const isFollowing = currentUser?.following?.includes(profileId);
+  const isFriend = currentUser?.friends?.includes(profileId);
+  const hasSentRequest = currentUser?.sentFriendRequests?.includes(profileId);
+  const hasIncomingRequest = currentUser?.friendRequests?.includes(profileId);
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">
@@ -229,7 +271,7 @@ export default function Profile() {
           </div>
 
           {/* Action buttons */}
-          <div className="w-full sm:w-auto flex gap-2">
+          <div className="w-full sm:w-auto flex gap-2 items-center">
             {isOwnProfile ? (
               <button 
                 onClick={() => setIsEditing(true)} 
@@ -240,16 +282,61 @@ export default function Profile() {
               </button>
             ) : (
               <>
+                {/* Friend Actions */}
+                {isFriend ? (
+                  <button 
+                    onClick={handleUnfriend} 
+                    className="flex-1 sm:flex-none font-bold px-5 py-2.5 rounded-2xl text-xs flex items-center justify-center gap-1.5 transition-all bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 group"
+                  >
+                    <span className="group-hover:hidden">Friends ✓</span>
+                    <span className="hidden group-hover:inline">Unfriend</span>
+                  </button>
+                ) : hasSentRequest ? (
+                  <button 
+                    onClick={handleFriendRequest} 
+                    className="flex-1 sm:flex-none font-bold px-5 py-2.5 rounded-2xl text-xs flex items-center justify-center gap-1.5 transition-all bg-white/5 border border-white/10 text-gray-400 hover:border-red-500/30 hover:text-red-400 group"
+                  >
+                    <span className="group-hover:hidden">Request Sent</span>
+                    <span className="hidden group-hover:inline">Cancel Request</span>
+                  </button>
+                ) : hasIncomingRequest ? (
+                  <div className="flex gap-1.5 flex-1 sm:flex-none">
+                    <button 
+                      onClick={handleAcceptFriend} 
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-2xl text-xs transition-colors shrink-0"
+                    >
+                      Accept
+                    </button>
+                    <button 
+                      onClick={handleDeclineFriend} 
+                      className="bg-red-600/20 hover:bg-red-600/30 border border-red-500/20 text-red-400 font-bold px-4 py-2.5 rounded-2xl text-xs transition-colors shrink-0"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={handleFriendRequest} 
+                    className="flex-1 sm:flex-none font-bold px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-500/10 rounded-2xl text-xs flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Add Friend</span>
+                  </button>
+                )}
+
+                {/* Follow Button */}
                 <button 
                   onClick={handleFollowToggle} 
-                  className={`flex-1 sm:flex-none font-bold px-6 py-2.5 rounded-2xl text-xs flex items-center justify-center gap-1.5 transition-all ${
+                  className={`px-4 py-2.5 rounded-2xl text-xs font-semibold border transition-all ${
                     isFollowing 
-                      ? 'bg-transparent border border-emerald-500/30 text-emerald-400' 
-                      : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-500/10'
+                      ? 'bg-transparent border-emerald-500/20 text-emerald-400' 
+                      : 'bg-[#1f2937] border-white/5 text-gray-300 hover:bg-[#374151]'
                   }`}
                 >
                   {isFollowing ? 'Following' : 'Follow'}
                 </button>
+
+                {/* Chat Bubble Icon */}
                 <button 
                   onClick={() => navigate(`/chat?userId=${profileId}`)}
                   className="p-2.5 bg-[#1f2937] hover:bg-[#374151] text-gray-200 border border-white/5 rounded-2xl transition-colors"
