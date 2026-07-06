@@ -50,8 +50,11 @@ if (process.env.NODE_ENV === 'production') {
 const wss = new WebSocket.Server({ noServer: true });
 
 wss.on('connection', (ws, req, userId) => {
-  wsManager.clients.set(userId, ws);
-  console.log(`User connected to WS. Total active: ${wsManager.clients.size}`);
+  if (!wsManager.clients.has(userId)) {
+    wsManager.clients.set(userId, new Set());
+  }
+  wsManager.clients.get(userId).add(ws);
+  console.log(`User connected to WS. Total active users: ${wsManager.clients.size}`);
 
   ws.on('message', (message) => {
     try {
@@ -67,14 +70,24 @@ wss.on('connection', (ws, req, userId) => {
     }
   });
 
+  const removeClient = () => {
+    const userSockets = wsManager.clients.get(userId);
+    if (userSockets) {
+      userSockets.delete(ws);
+      if (userSockets.size === 0) {
+        wsManager.clients.delete(userId);
+      }
+    }
+  };
+
   ws.on('close', () => {
-    wsManager.clients.delete(userId);
-    console.log(`User disconnected from WS. Total active: ${wsManager.clients.size}`);
+    removeClient();
+    console.log(`User disconnected from WS. Total active users: ${wsManager.clients.size}`);
   });
 
   ws.on('error', (err) => {
     console.error(`WS error for user ${userId}:`, err);
-    wsManager.clients.delete(userId);
+    removeClient();
   });
 });
 
