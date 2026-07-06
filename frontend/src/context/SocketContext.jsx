@@ -27,9 +27,8 @@ export const SocketProvider = ({ children }) => {
       const separator = configuredWsUrl.includes('?') ? '&' : '?';
       wsUrl = `${configuredWsUrl}${separator}token=${token}`;
     } else {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      wsUrl = process.env.NODE_ENV === 'production' 
-        ? `${protocol}//${window.location.host}?token=${token}`
+      wsUrl = import.meta.env.PROD 
+        ? `wss://website-project-1s5f.onrender.com?token=${token}`
         : `ws://localhost:5000?token=${token}`;
     }
 
