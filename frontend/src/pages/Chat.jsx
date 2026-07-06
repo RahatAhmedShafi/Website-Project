@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
-import { Send, MessageSquare, User, Smile, Shield } from 'lucide-react';
+import { Send, MessageSquare, User, Smile, Shield, ArrowLeft } from 'lucide-react';
 
 export default function Chat() {
   const { user: currentUser, getHeaders, getFriends } = useAuth();
@@ -161,10 +161,10 @@ export default function Chat() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto py-6 px-4 h-[84vh] flex gap-4">
+    <div className="max-w-6xl mx-auto py-4 md:py-6 px-2 md:px-4 h-[85vh] flex gap-4">
       
       {/* Sidebar - Threads list */}
-      <div className="w-full md:w-80 glass-panel rounded-3xl p-4 border border-white/5 flex flex-col justify-between overflow-hidden">
+      <div className={`w-full md:w-80 glass-panel rounded-3xl p-4 border border-white/5 flex flex-col justify-between overflow-hidden ${activePartner ? 'hidden md:flex' : 'flex'}`}>
         <div className="space-y-4 overflow-hidden flex flex-col flex-1">
           <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-emerald-400" />
@@ -279,11 +279,21 @@ export default function Chat() {
       </div>
 
       {/* Main chat details viewport */}
-      <div className="flex-1 glass-panel rounded-3xl border border-white/5 flex flex-col overflow-hidden relative bg-[#111827]/20">
+      <div className={`flex-1 glass-panel rounded-3xl border border-white/5 flex flex-col overflow-hidden relative bg-[#111827]/20 ${activePartner ? 'flex' : 'hidden md:flex'}`}>
         {activePartner ? (
           <>
             {/* Chat header */}
             <div className="p-4 border-b border-white/5 flex items-center gap-3 bg-[#0b0f17]/40">
+              <button
+                onClick={() => {
+                  setActivePartner(null);
+                  navigate('/chat');
+                }}
+                className="md:hidden p-1.5 hover:bg-white/5 text-gray-400 hover:text-white rounded-xl transition-all cursor-pointer mr-1"
+                title="Back to Conversations"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
               {activePartner.profilePicture ? (
                 <img src={activePartner.profilePicture} alt={activePartner.name} className="w-10 h-10 rounded-full object-cover" />
               ) : (
