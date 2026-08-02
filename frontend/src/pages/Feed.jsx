@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { 
@@ -18,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export default function Feed({ communityId = null }) {
-  const { user, getHeaders } = useAuth();
+  const { user, getHeaders, followUser } = useAuth();
   const { incomingNotification } = useSocket();
   
   const [posts, setPosts] = useState([]);
@@ -26,6 +27,10 @@ export default function Feed({ communityId = null }) {
   const [text, setText] = useState('');
   const [image, setImage] = useState('');
   const [publishing, setPublishing] = useState(false);
+
+  // Recommendations state
+  const [recommendations, setRecommendations] = useState([]);
+  const [loadingRecs, setLoadingRecs] = useState(true);
 
   // Active post comments tray
   const [activeCommentsPostId, setActiveCommentsPostId] = useState(null);
@@ -42,7 +47,24 @@ export default function Feed({ communityId = null }) {
       const res = await fetch(url, { headers: getHeaders() });
       if (res.ok) {
         const data = await res.json();
-        setPosts(data);
+        
+        // Optimistically highlight/place target linked post at the top if present in query parameters
+        const params = new URLSearchParams(window.location.search);
+        const targetPostId = params.get('post');
+        if (targetPostId) {
+          const targetPost = data.find(p => p._id === targetPostId);
+          if (targetPost) {
+            const otherPosts = data.filter(p => p._id !== targetPostId);
+            setPosts([targetPost, ...otherPosts]);
+            // Open comments for shared post automatically
+            setActiveCommentsPostId(targetPostId);
+            fetchComments(targetPostId);
+          } else {
+            setPosts(data);
+          }
+        } else {
+          setPosts(data);
+        }
       }
     } catch (err) {
       console.error('Error fetching feed:', err);
@@ -51,9 +73,36 @@ export default function Feed({ communityId = null }) {
     }
   };
 
+  const fetchRecommendations = async () => {
+    try {
+      const res = await fetch('/api/search/recommendations', { headers: getHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setRecommendations(data);
+      }
+    } catch (err) {
+      console.error('Error fetching recommendations:', err);
+    } finally {
+      setLoadingRecs(false);
+    }
+  };
+
   useEffect(() => {
     fetchFeed();
+    if (!communityId) {
+      fetchRecommendations();
+    }
   }, [communityId]);
+
+  const handleFollowRec = async (targetId) => {
+    try {
+      await followUser(targetId);
+      // Remove followed user from suggestions list
+      setRecommendations(prev => prev.filter(r => r._id !== targetId));
+    } catch (err) {
+      console.error('Error following recommended user:', err);
+    }
+  };
 
   // Read images locally using FileReader (Base64)
   const handleImageChange = (e) => {
@@ -97,17 +146,33 @@ export default function Feed({ communityId = null }) {
     }
   };
 
-  // Like / Unlike Post
+  // Like / Unlike Post (Optimistic snappy updates)
   const handleLike = async (postId) => {
+    const originalPosts = [...posts];
+
+    // Toggle locally instantly
+    setPosts(prevPosts => prevPosts.map(p => {
+      if (p._id === postId) {
+        const hasLiked = p.likes?.includes(user?._id);
+        const newLikes = hasLiked
+          ? p.likes.filter(id => id !== user?._id)
+          : [...(p.likes || []), user?._id];
+        return { ...p, likes: newLikes };
+      }
+      return p;
+    }));
+
     try {
       const res = await fetch(`/api/posts/${postId}/like`, {
         method: 'POST',
         headers: getHeaders()
       });
 
-      if (res.ok) {
-        const data = await res.json(); // { likes }
-        setPosts(posts.map(p => {
+      if (!res.ok) {
+        setPosts(originalPosts);
+      } else {
+        const data = await res.json();
+        setPosts(prevPosts => prevPosts.map(p => {
           if (p._id === postId) {
             return { ...p, likes: data.likes };
           }
@@ -116,6 +181,7 @@ export default function Feed({ communityId = null }) {
       }
     } catch (err) {
       console.error('Error liking post:', err);
+      setPosts(originalPosts);
     }
   };
 
@@ -173,27 +239,53 @@ export default function Feed({ communityId = null }) {
     }
   };
 
-  // Share Simulation
+  // Unique link sharing & optimistic count updates
   const handleShare = async (postId) => {
+    const shareUrl = `${window.location.origin}/?post=${postId}`;
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+    } catch (err) {
+      console.warn('Clipboard write failed, fallback alert:', err);
+    }
+
+    const originalPosts = [...posts];
+
+    // Optimistically increment share counts locally
+    setPosts(prevPosts => prevPosts.map(p => {
+      if (p._id === postId) {
+        return { ...p, sharesCount: (p.sharesCount || 0) + 1 };
+      }
+      return p;
+    }));
+
+    // Render snappy non-disruptive Toast alert
+    const alertDiv = document.createElement('div');
+    alertDiv.className = "fixed bottom-5 right-5 bg-emerald-600 text-white font-bold px-4 py-3 rounded-2xl shadow-xl z-50 text-xs animate-slideInRight";
+    alertDiv.innerText = "Unique post link copied to clipboard!";
+    document.body.appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 2500);
+
     try {
       const res = await fetch(`/api/posts/${postId}/share`, {
         method: 'POST',
         headers: getHeaders()
       });
 
-      if (res.ok) {
+      if (!res.ok) {
+        setPosts(originalPosts);
+      } else {
         const data = await res.json(); // { sharesCount }
-        setPosts(posts.map(p => {
+        setPosts(prevPosts => prevPosts.map(p => {
           if (p._id === postId) {
             return { ...p, sharesCount: data.sharesCount };
           }
           return p;
         }));
-        // Show copies message simulation
-        alert("Post link copied to clipboard! Shares count updated.");
       }
     } catch (err) {
       console.error('Error sharing post:', err);
+      setPosts(originalPosts);
     }
   };
 
@@ -201,7 +293,9 @@ export default function Feed({ communityId = null }) {
   const [deletingPostId, setDeletingPostId] = useState(null);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 py-6 px-4">
+    <div className="max-w-6xl mx-auto py-6 px-4 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start animate-fadeIn">
+      {/* Feed Column */}
+      <div className="lg:col-span-2 space-y-6">
       
       {/* Publisher Glass Card */}
       {!communityId || (communityId && user) ? (
@@ -295,25 +389,25 @@ export default function Feed({ communityId = null }) {
             return (
               <div key={post._id} className="glass-panel rounded-3xl p-5 border border-white/5 flex flex-col gap-4">
                 
-                {/* Post Author Info */}
+                {/* Post Author Info (Clickable Link to Profile) */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <Link to={`/profile/${post.user?._id || post.user}`} className="flex items-center gap-3 group">
                     {post.user?.profilePicture ? (
-                      <img src={post.user.profilePicture} alt={post.user.name} className="w-10 h-10 rounded-full object-cover" />
+                      <img src={post.user.profilePicture} alt={post.user.name} className="w-10 h-10 rounded-full object-cover group-hover:opacity-85 transition-opacity" />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold uppercase text-sm">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold uppercase text-sm group-hover:scale-105 transition-transform">
                         {post.user?.name ? post.user.name.charAt(0) : 'U'}
                       </div>
                     )}
                     <div>
-                      <h4 className="font-bold text-gray-200 text-sm hover:underline cursor-pointer">{post.user?.name}</h4>
+                      <h4 className="font-bold text-gray-200 text-sm group-hover:underline cursor-pointer">{post.user?.name}</h4>
                       <p className="text-xs text-gray-500 flex items-center gap-1">
                         {post.user?.university && <span>{post.user.university} • </span>}
                         {post.user?.district && <span>{post.user.district} • </span>}
                         <span>{new Date(post.createdAt).toLocaleDateString()}</span>
                       </p>
                     </div>
-                  </div>
+                  </Link>
 
                   {/* Edit/Delete Actions for Post Owner */}
                   {((post.user?._id || post.user) === user?._id) && (
@@ -391,7 +485,7 @@ export default function Feed({ communityId = null }) {
                         placeholder="Write a comment..."
                         value={newCommentText}
                         onChange={(e) => setNewCommentText(e.target.value)}
-                        className="flex-1 bg-[#111827] border border-white/10 rounded-2xl px-4 py-2 text-xs focus:outline-none focus:border-emerald-500/50 text-gray-200"
+                        className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl px-4 py-2 text-xs focus:outline-none focus:border-emerald-500/50 text-gray-800 dark:text-gray-200"
                       />
                       <button
                         type="submit"
@@ -409,7 +503,7 @@ export default function Feed({ communityId = null }) {
                         <p className="text-center text-xs text-gray-500 py-2">No comments yet. Write something!</p>
                       ) : (
                         comments[post._id].map((c) => (
-                          <div key={c._id} className="flex gap-2.5 items-start p-2 bg-[#111827]/40 rounded-2xl border border-white/5">
+                          <div key={c._id} className="flex gap-2.5 items-start p-2 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-gray-800/50">
                             {c.user?.profilePicture ? (
                               <img src={c.user.profilePicture} alt={c.user.name} className="w-6.5 h-6.5 rounded-full object-cover" />
                             ) : (
@@ -531,7 +625,52 @@ export default function Feed({ communityId = null }) {
           </div>
         </div>
       )}
+      </div>
 
+      {/* Suggested Friends Sidebar */}
+      {!communityId && (
+        <div className="hidden lg:block space-y-6 sticky top-24 animate-fadeIn">
+          <div className="glass-panel rounded-3xl p-5 border border-slate-200 dark:border-white/5 space-y-4">
+            <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-gray-400">Suggested Friends</h3>
+            {loadingRecs ? (
+              <p className="text-xs text-gray-500 py-2">Loading suggestions...</p>
+            ) : recommendations.length === 0 ? (
+              <p className="text-xs text-gray-500 py-2">No recommendations active. You followed everyone nearby!</p>
+            ) : (
+              <div className="space-y-3.5">
+                {recommendations.map((rec) => (
+                  <div key={rec._id} className="flex items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {rec.profilePicture ? (
+                        <img src={rec.profilePicture} alt={rec.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-extrabold text-[10px] uppercase shrink-0">
+                          {rec.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <Link to={`/profile/${rec._id}`} className="text-xs font-bold text-slate-800 dark:text-gray-200 hover:underline truncate block">
+                          {rec.name}
+                        </Link>
+                        <p className="text-[9px] text-gray-400 truncate">
+                          {rec.university || rec.district || 'Vibora Citizen'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleFollowRec(rec._id)}
+                      className="bg-emerald-600/10 hover:bg-emerald-600 text-emerald-600 dark:text-emerald-400 hover:text-white border border-emerald-500/20 font-bold px-3 py-1 rounded-xl text-[9px] flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <UserPlus className="w-3 h-3" />
+                      <span>Follow</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

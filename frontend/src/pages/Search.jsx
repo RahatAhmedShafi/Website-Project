@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Search as SearchIcon, Users, User, FileText, ChevronRight } from 'lucide-react';
 
 export default function Search() {
-  const { user, getHeaders } = useAuth();
+  const { user, getHeaders, followUser } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -12,6 +12,10 @@ export default function Search() {
   const [term, setTerm] = useState(query);
   const [results, setResults] = useState({ users: [], posts: [], communities: [] });
   const [loading, setLoading] = useState(false);
+
+  // Recommendations state
+  const [recommendations, setRecommendations] = useState([]);
+  const [loadingRecs, setLoadingRecs] = useState(false);
 
   const fetchResults = async () => {
     if (!query) return;
@@ -29,9 +33,27 @@ export default function Search() {
     }
   };
 
+  const fetchRecommendations = async () => {
+    try {
+      setLoadingRecs(true);
+      const res = await fetch('/api/search/recommendations', { headers: getHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setRecommendations(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingRecs(false);
+    }
+  };
+
   useEffect(() => {
     setTerm(query);
     fetchResults();
+    if (!query) {
+      fetchRecommendations();
+    }
   }, [query]);
 
   const handleSubmit = (e) => {
@@ -71,8 +93,61 @@ export default function Search() {
           <p className="text-gray-400 text-sm">Searching global records...</p>
         </div>
       ) : !query ? (
-        <div className="glass-panel rounded-3xl p-12 text-center border border-white/5 text-gray-500 text-sm">
-          Enter a search phrase above to search Vibora network database.
+        <div className="space-y-6 animate-fadeIn">
+          <div className="glass-panel rounded-3xl p-8 text-center border border-slate-200 dark:border-white/5 text-gray-500 text-sm">
+            <SearchIcon className="w-10 h-10 text-gray-400 mx-auto mb-3 animate-pulse-slow" />
+            <p className="font-semibold text-slate-700 dark:text-gray-300">Start Searching Vibora</p>
+            <p className="text-xs text-gray-400 mt-1">Enter a search phrase above to search users, posts, or community topics.</p>
+          </div>
+
+          {/* Suggested Friends */}
+          <div className="space-y-4">
+            <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-500 dark:text-gray-400">People You May Know</h3>
+            {loadingRecs ? (
+              <p className="text-xs text-gray-500 text-center py-6">Loading recommendations...</p>
+            ) : recommendations.length === 0 ? (
+              <p className="text-xs text-gray-500 text-center py-6">No suggestions found. You followed all citizens!</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {recommendations.map((rec) => (
+                  <div 
+                    key={rec._id}
+                    className="glass-panel rounded-3xl p-4 border border-slate-200 dark:border-white/5 flex items-center justify-between gap-3"
+                  >
+                    <Link to={`/profile/${rec._id}`} className="flex items-center gap-3 min-w-0">
+                      {rec.profilePicture ? (
+                        <img src={rec.profilePicture} alt={rec.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-extrabold text-xs uppercase shrink-0">
+                          {rec.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-slate-800 dark:text-gray-200 text-xs truncate hover:underline">{rec.name}</h4>
+                        <p className="text-[10px] text-gray-400 truncate mt-0.5">
+                          {rec.university || rec.district || 'Vibora Citizen'}
+                        </p>
+                      </div>
+                    </Link>
+
+                    <button
+                      onClick={async () => {
+                        try {
+                          await followUser(rec._id);
+                          setRecommendations(prev => prev.filter(r => r._id !== rec._id));
+                        } catch (err) {
+                          console.error(err);
+                        }
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-1.5 rounded-xl text-[10px] transition-colors cursor-pointer shrink-0"
+                    >
+                      Follow
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         <div className="space-y-8 animate-fadeIn">

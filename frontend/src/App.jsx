@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider, useSocket } from './context/SocketContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { MessageSquare, Bell, X } from 'lucide-react';
 
 // Components
@@ -94,7 +95,7 @@ function AppRoutes() {
   }, [incomingMessage]);
 
   return (
-    <div className="min-h-screen bg-[#0b0f17] flex flex-col relative">
+    <div className="min-h-screen dark:bg-[#0b0f17] bg-slate-50 text-slate-800 dark:text-gray-100 flex flex-col relative transition-colors duration-300">
       {user && <Navbar />}
 
       {/* Real-time floating toast notifier */}
@@ -156,11 +157,13 @@ function AppRoutes() {
 export default function App() {
   return (
     <Router>
-      <AuthProvider>
-        <SocketProvider>
-          <AppRoutes />
-        </SocketProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <SocketProvider>
+            <AppRoutes />
+          </SocketProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </Router>
   );
 }

@@ -55,4 +55,50 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
+// @route   GET api/search/recommendations
+// @desc    Get recommended friends/users (not followed yet, sorted by shared university/district)
+router.get('/recommendations', authMiddleware, async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const currentUser = await db.findById('users', currentUserId);
+    if (!currentUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const following = currentUser.following || [];
+    
+    // Get all users
+    const allUsers = await db.find('users');
+
+    // Filter out:
+    // 1. Current user
+    // 2. Users current user is already following
+    let recommendations = allUsers.filter(u => 
+      u._id.toString() !== currentUserId &&
+      !following.some(f => f.toString() === u._id.toString())
+    );
+
+    // Score based on local proximity matches
+    recommendations = recommendations.map(u => {
+      let score = 0;
+      if (currentUser.university && u.university && u.university.toLowerCase() === currentUser.university.toLowerCase()) {
+        score += 3;
+      }
+      if (currentUser.district && u.district && u.district.toLowerCase() === currentUser.district.toLowerCase()) {
+        score += 2;
+      }
+      return { ...u, score };
+    });
+
+    // Sort by match score descending, then take top 5
+    recommendations.sort((a, b) => b.score - a.score);
+    const topRecs = recommendations.slice(0, 5).map(({ password, ...u }) => u);
+
+    res.json(topRecs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error fetching recommendations' });
+  }
+});
+
 module.exports = router;

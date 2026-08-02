@@ -29,6 +29,31 @@ if (!fs.existsSync(DB_FILE)) {
 }
 
 let isMongoConnected = false;
+let localDBCache = null;
+
+// Initialize memory cache (loads db.json once into RAM)
+function getLocalDBCache() {
+  if (!localDBCache) {
+    try {
+      const data = fs.readFileSync(DB_FILE, 'utf8');
+      localDBCache = JSON.parse(data);
+    } catch (e) {
+      console.error('Error reading/parsing local db.json', e);
+      localDBCache = {};
+    }
+  }
+  return localDBCache;
+}
+
+// Asynchronous non-blocking writer (queues disk I/O in worker pool)
+function queueWriteLocalDB() {
+  if (!localDBCache) return;
+  fs.writeFile(DB_FILE, JSON.stringify(localDBCache, null, 2), 'utf8', (err) => {
+    if (err) {
+      console.error('Error writing to local db.json asynchronously:', err);
+    }
+  });
+}
 
 // Initialize Database connection
 async function connectDB() {
@@ -46,25 +71,6 @@ async function connectDB() {
   } else {
     console.log('No MONGO_URI provided in .env. Using local JSON database (backend/data/db.json).');
     isMongoConnected = false;
-  }
-}
-
-// Low-level helper functions for local JSON DB
-function readLocalDB() {
-  try {
-    const data = fs.readFileSync(DB_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (e) {
-    console.error('Error reading local db.json', e);
-    return {};
-  }
-}
-
-function writeLocalDB(data) {
-  try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (e) {
-    console.error('Error writing to local db.json', e);
   }
 }
 
@@ -87,7 +93,7 @@ const db = {
       if (options.populate) q = q.populate(options.populate);
       return await q.lean();
     } else {
-      const data = readLocalDB();
+      const data = getLocalDBCache();
       let list = data[collection] || [];
       
       // Filter list based on query keys
@@ -149,7 +155,7 @@ const db = {
       // Populate simulation (e.g., populate 'user' by mapping user objects)
       if (options.populate) {
         const populateFields = Array.isArray(options.populate) ? options.populate : [options.populate];
-        const localData = readLocalDB();
+        const localData = getLocalDBCache();
         list = list.map(item => {
           const newItem = { ...item };
           populateFields.forEach(field => {
@@ -205,7 +211,7 @@ const db = {
       const saved = await newDoc.save();
       return saved.toObject();
     } else {
-      const data = readLocalDB();
+      const data = getLocalDBCache();
       const list = data[collection] || [];
       const newDoc = {
         _id: generateId(),
@@ -215,7 +221,7 @@ const db = {
       };
       list.push(newDoc);
       data[collection] = list;
-      writeLocalDB(data);
+      queueWriteLocalDB();
       return newDoc;
     }
   },
@@ -226,7 +232,7 @@ const db = {
       const model = mongoose.model(collection);
       return await model.findByIdAndUpdate(id, updateData, options).lean();
     } else {
-      const data = readLocalDB();
+      const data = getLocalDBCache();
       const list = data[collection] || [];
       const index = list.findIndex(item => item._id === id.toString());
       if (index === -1) return null;
@@ -256,7 +262,7 @@ const db = {
 
       list[index] = updated;
       data[collection] = list;
-      writeLocalDB(data);
+      queueWriteLocalDB();
       return updated;
     }
   },
@@ -267,7 +273,7 @@ const db = {
       const model = mongoose.model(collection);
       return await model.updateMany(query, updateData);
     } else {
-      const data = readLocalDB();
+      const data = getLocalDBCache();
       const list = data[collection] || [];
       let updatedCount = 0;
       
@@ -287,7 +293,7 @@ const db = {
       });
 
       data[collection] = newList;
-      writeLocalDB(data);
+      queueWriteLocalDB();
       return { nModified: updatedCount };
     }
   },
@@ -298,13 +304,13 @@ const db = {
       const model = mongoose.model(collection);
       return await model.findByIdAndDelete(id).lean();
     } else {
-      const data = readLocalDB();
+      const data = getLocalDBCache();
       const list = data[collection] || [];
       const index = list.findIndex(item => item._id === id.toString());
       if (index === -1) return null;
       const deleted = list.splice(index, 1)[0];
       data[collection] = list;
-      writeLocalDB(data);
+      queueWriteLocalDB();
       return deleted;
     }
   },
@@ -315,7 +321,7 @@ const db = {
       const model = mongoose.model(collection);
       return await model.deleteMany(query);
     } else {
-      const data = readLocalDB();
+      const data = getLocalDBCache();
       const list = data[collection] || [];
       const beforeLength = list.length;
       const newList = list.filter(item => {
@@ -325,7 +331,7 @@ const db = {
         return false;
       });
       data[collection] = newList;
-      writeLocalDB(data);
+      queueWriteLocalDB();
       return { deletedCount: beforeLength - newList.length };
     }
   }

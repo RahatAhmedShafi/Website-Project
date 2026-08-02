@@ -36,7 +36,7 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-[90vh] flex items-center justify-center px-4 py-12 bg-gradient-to-b from-[#0b0f17] to-[#111827]">
+    <div className="min-h-[90vh] flex items-center justify-center px-4 py-12 dark:bg-gradient-to-b dark:from-[#0b0f17] dark:to-[#111827] bg-slate-50 transition-colors duration-300">
       <div className="w-full max-w-lg glass-panel rounded-3xl p-8 shadow-2xl relative overflow-hidden">
         
         {/* Glow Accents */}
@@ -47,7 +47,7 @@ export default function Register() {
           <div className="inline-flex items-center justify-center p-3 bg-gradient-to-tr from-emerald-500/10 to-emerald-500/5 rounded-2xl text-emerald-400 mb-3 border border-emerald-500/20">
             <Sparkles className="w-6 h-6 animate-pulse" />
           </div>
-          <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
+          <h2 className="text-3xl font-extrabold tracking-tight dark:bg-gradient-to-r dark:from-white dark:via-gray-100 dark:to-gray-300 dark:bg-clip-text dark:text-transparent text-slate-800">
             Join Vibora
           </h2>
           <p className="text-gray-400 text-sm mt-2">

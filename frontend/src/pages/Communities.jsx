@@ -192,13 +192,13 @@ export default function Communities() {
                     <p className="text-gray-400 text-xs line-clamp-2 leading-relaxed">{c.description}</p>
                   </div>
 
-                  <div className="pt-4 border-t border-white/5 flex justify-end">
+                  <div className="pt-4 border-t border-slate-200 dark:border-white/5 flex justify-end">
                     <button
                       onClick={(e) => handleJoin(c._id, e)}
                       className={`font-semibold px-4 py-1.5 rounded-xl text-[10px] tracking-wide transition-colors ${
                         isJoined 
-                          ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' 
-                          : 'bg-[#1f2937] hover:bg-[#374151] text-gray-200 border border-white/5'
+                          ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+                          : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700'
                       }`}
                     >
                       {isJoined ? 'Joined' : 'Join'}
