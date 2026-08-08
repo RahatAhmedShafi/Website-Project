@@ -24,6 +24,43 @@ connectDB();
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); // Support base64 image uploads
 
+// Varsity Computer Security Course - Custom HTTP Security Headers & Mitigations
+app.use((req, res, next) => {
+  // Prevent Clickjacking (Mitigating Phishing & UI Redressing)
+  res.setHeader('X-Frame-Options', 'DENY');
+
+  // Prevent Browser Exploitation (Mitigating BeEF injection frameworks by enforcing strict CSP)
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:;"
+  );
+
+  // Prevent MIME-type Sniffing (MIME sniffing security)
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+
+  // Enforce HSTS (Strict Transport Security - Mitigates MITM credential harvesting)
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+
+  // Enable XSS Filtering in older browsers
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+
+  // Prevent NoSQL Injection attacks (recursively sanitizes request body keys starting with '$')
+  if (req.body && typeof req.body === 'object') {
+    const sanitize = (obj) => {
+      for (let key in obj) {
+        if (key.startsWith('$')) {
+          delete obj[key];
+        } else if (obj[key] && typeof obj[key] === 'object') {
+          sanitize(obj[key]);
+        }
+      }
+    };
+    sanitize(req.body);
+  }
+
+  next();
+});
+
 // Test Route
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date() });
