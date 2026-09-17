@@ -18,23 +18,25 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Please enter all required fields' });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+
     // Check if user exists
-    const userExists = await db.findOne('users', { email: email.toLowerCase() });
+    const userExists = await db.findOne('users', { email: cleanEmail });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password.trim(), salt);
 
     // Create user
     const newUser = await db.create('users', {
-      name,
-      email: email.toLowerCase(),
+      name: name.trim(),
+      email: cleanEmail,
       password: hashedPassword,
-      university: university || '',
-      district: district || '',
+      university: university ? university.trim() : '',
+      district: district ? district.trim() : '',
       skills: [],
       bio: '',
       profilePicture: '',
@@ -63,14 +65,17 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Please enter all fields' });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
     // Check user
-    const user = await db.findOne('users', { email: email.toLowerCase() });
+    const user = await db.findOne('users', { email: cleanEmail });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(cleanPassword, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }

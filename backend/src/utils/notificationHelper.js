@@ -9,7 +9,7 @@ const wsManager = require('./wsManager');
  * @param {string|null} postId - Optional related post ID
  * @returns {object|null} Saved notification object
  */
-async function createAndSendNotification(recipientId, senderId, type, postId = null) {
+async function createAndSendNotification(recipientId, senderId, type, postId = null, details = null) {
   try {
     // Do not notify yourself
     if (recipientId.toString() === senderId.toString()) return null;
@@ -19,6 +19,7 @@ async function createAndSendNotification(recipientId, senderId, type, postId = n
       sender: senderId,
       type,
       post: postId,
+      details: details || null,
       read: false
     });
 

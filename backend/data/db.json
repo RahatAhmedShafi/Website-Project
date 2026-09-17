@@ -4,7 +4,7 @@
       "_id": "5cykf0lu9ws6r9bycjci8",
       "name": "Shafi Ahmed",
       "email": "shafi@vibora.com",
-      "password": "$2a$10$1WqNIWytV1TTEgbs3jNA1O1Z8KRw/DR7IjnQqwccPwEizd2UAZkyu",
+      "password": "$2a$10$uk./VwDxCWBTc2m3HjzxWeklYJWsqSxYj36jZF7nLkCW5kQX7D88S",
       "university": "BUET",
       "district": "Dhaka",
       "skills": [
@@ -62,6 +62,44 @@
       "following": [],
       "createdAt": "2026-07-02T07:36:25.661Z",
       "updatedAt": "2026-07-02T07:50:03.080Z"
+    },
+    {
+      "_id": "24clkgtoivjiyoyuwmkbo5i",
+      "name": "demo2",
+      "email": "demo2@gmail.com",
+      "password": "$2a$10$uk./VwDxCWBTc2m3HjzxWeklYJWsqSxYj36jZF7nLkCW5kQX7D88S",
+      "university": "",
+      "district": "Comilla",
+      "skills": [],
+      "bio": "",
+      "profilePicture": "",
+      "followers": [],
+      "following": [],
+      "createdAt": "2026-09-17T04:37:09.142Z",
+      "updatedAt": "2026-09-17T04:37:09.142Z"
+    },
+    {
+      "_id": "hamsre984d4m3moy9y5pon",
+      "name": "Test User",
+      "email": "testuser123@gmail.com",
+      "password": "$2a$10$gPskbHyZxBkWH2n3uKxZ0OVeTTgWVxoiE7Iv7Pvy73juG4EpFHBM2",
+      "createdAt": "2026-09-17T05:04:01.785Z",
+      "updatedAt": "2026-09-17T05:04:01.785Z"
+    },
+    {
+      "_id": "0ms693zvegbd71qz4124e7g",
+      "name": "shakib",
+      "email": "shakib@gmail.com",
+      "password": "$2a$10$I.TYxcH9YTtQcAwO9IF.NOqqTzONWJ3Qt4qruuUk.7GG.ruF6slv.",
+      "university": "",
+      "district": "Narayanganj",
+      "skills": [],
+      "bio": "",
+      "profilePicture": "",
+      "followers": [],
+      "following": [],
+      "createdAt": "2026-09-17T05:06:08.175Z",
+      "updatedAt": "2026-09-17T05:06:08.175Z"
     }
   ],
   "posts": [
@@ -201,7 +239,40 @@
     }
   ],
   "messages": [],
-  "notifications": [],
+  "notifications": [
+    {
+      "_id": "2mkemf16st36ki4pdo2bne",
+      "recipient": "0ms693zvegbd71qz4124e7g",
+      "sender": "24clkgtoivjiyoyuwmkbo5i",
+      "type": "contact_revealed",
+      "post": null,
+      "read": true,
+      "createdAt": "2026-09-17T05:07:08.679Z",
+      "updatedAt": "2026-09-17T05:17:38.510Z"
+    },
+    {
+      "_id": "82uym9zosucwjvlke8w1",
+      "recipient": "0ms693zvegbd71qz4124e7g",
+      "sender": "24clkgtoivjiyoyuwmkbo5i",
+      "type": "contact_revealed",
+      "post": null,
+      "details": "Requested and unmasked contact phone number for Blood Donor profile (A+ - Mymensingh)",
+      "read": true,
+      "createdAt": "2026-09-17T05:16:55.842Z",
+      "updatedAt": "2026-09-17T05:17:38.510Z"
+    },
+    {
+      "_id": "czgy45dwnffbyaol7y004v",
+      "recipient": "5cykf0lu9ws6r9bycjci8",
+      "sender": "24clkgtoivjiyoyuwmkbo5i",
+      "type": "contact_revealed",
+      "post": null,
+      "details": "Requested and unmasked contact phone number for Blood Donor profile (AB+ - Dhaka)",
+      "read": false,
+      "createdAt": "2026-09-17T05:17:16.581Z",
+      "updatedAt": "2026-09-17T05:17:16.581Z"
+    }
+  ],
   "blood_donors": [
     {
       "_id": "4v6mna294ehhcwl3cunbpb",
@@ -213,6 +284,17 @@
       "available": true,
       "createdAt": "2026-07-02T07:25:30.927Z",
       "updatedAt": "2026-07-02T07:25:30.927Z"
+    },
+    {
+      "_id": "6prnrn8je1mor9ni712nbl",
+      "user": "0ms693zvegbd71qz4124e7g",
+      "name": "shakib",
+      "bloodGroup": "A+",
+      "district": "Mymensingh",
+      "phone": "01698456780",
+      "available": true,
+      "createdAt": "2026-09-17T05:06:50.995Z",
+      "updatedAt": "2026-09-17T05:06:50.995Z"
     }
   ],
   "tuition_posts": [
@@ -248,5 +330,37 @@
       "updatedAt": "2026-07-02T07:29:17.121Z"
     }
   ],
-  "notices": []
+  "notices": [],
+  "security_logs": [
+    {
+      "_id": "urh7krjj6888lugqliyrct",
+      "event": "PII_CONTACT_UNMASKED",
+      "user": "24clkgtoivjiyoyuwmkbo5i",
+      "targetId": "6prnrn8je1mor9ni712nbl",
+      "details": "User 24clkgtoivjiyoyuwmkbo5i requested contact unmask for Blood Donor shakib (A+)",
+      "ip": "::1",
+      "createdAt": "2026-09-17T05:07:08.672Z",
+      "updatedAt": "2026-09-17T05:07:08.672Z"
+    },
+    {
+      "_id": "bzx0pbr13ga4pl1wrrapsu",
+      "event": "PII_CONTACT_UNMASKED",
+      "user": "24clkgtoivjiyoyuwmkbo5i",
+      "targetId": "6prnrn8je1mor9ni712nbl",
+      "details": "User 24clkgtoivjiyoyuwmkbo5i requested contact unmask for Blood Donor shakib (A+)",
+      "ip": "::1",
+      "createdAt": "2026-09-17T05:16:55.829Z",
+      "updatedAt": "2026-09-17T05:16:55.831Z"
+    },
+    {
+      "_id": "n725olddkx112lyiy7rl6d",
+      "event": "PII_CONTACT_UNMASKED",
+      "user": "24clkgtoivjiyoyuwmkbo5i",
+      "targetId": "4v6mna294ehhcwl3cunbpb",
+      "details": "User 24clkgtoivjiyoyuwmkbo5i requested contact unmask for Blood Donor Shafi Ahmed (AB+)",
+      "ip": "::1",
+      "createdAt": "2026-09-17T05:17:16.569Z",
+      "updatedAt": "2026-09-17T05:17:16.571Z"
+    }
+  ]
 }

@@ -3,6 +3,7 @@ const router = express.Router();
 const { db } = require('../config/db');
 const authMiddleware = require('../middleware/auth');
 const { createAndSendNotification } = require('../utils/notificationHelper');
+const { sanitizeBloodDonor, sanitizeTuitionPost } = require('../utils/piiHelper');
 
 // ==========================================
 // 🩸 BLOOD DONOR ROUTING
@@ -49,7 +50,7 @@ router.post('/blood/register', authMiddleware, async (req, res) => {
 });
 
 // @route   GET api/utilities/blood/search
-// @desc    Search/list blood donors with optional group and district filters
+// @desc    Search/list blood donors with optional group and district filters (PII Protected)
 router.get('/blood/search', authMiddleware, async (req, res) => {
   const { bloodGroup, district, available } = req.query;
 
@@ -60,10 +61,49 @@ router.get('/blood/search', authMiddleware, async (req, res) => {
     if (available) query.available = available === 'true';
 
     const donors = await db.find('blood_donors', query, { sort: { updatedAt: -1 } });
-    res.json(donors);
+    
+    // Apply PII data protection masking by default
+    const sanitizedDonors = donors.map(d => sanitizeBloodDonor(d, req.user ? req.user.id : null));
+    res.json(sanitizedDonors);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error searching blood donors' });
+  }
+});
+
+// @route   POST api/utilities/blood/reveal-contact/:id
+// @desc    Request and reveal donor contact number (Requires Authorization & Audits Access)
+router.post('/blood/reveal-contact/:id', authMiddleware, async (req, res) => {
+  try {
+    const donor = await db.findById('blood_donors', req.params.id);
+    if (!donor) {
+      return res.status(404).json({ message: 'Blood donor profile not found' });
+    }
+
+    // Log PII unmasking audit event for SIEM / Security Log
+    await db.create('security_logs', {
+      event: 'PII_CONTACT_UNMASKED',
+      user: req.user.id,
+      targetId: donor._id,
+      details: `User ${req.user.id} requested contact unmask for Blood Donor ${donor.name} (${donor.bloodGroup})`,
+      ip: req.ip || (req.headers && req.headers['x-forwarded-for']) || req.connection?.remoteAddress || '127.0.0.1'
+    });
+
+    // Notify donor if donor has a user account and is not the requester
+    if (donor.user && donor.user.toString() !== req.user.id) {
+      const detailMsg = `Requested and unmasked contact phone number for Blood Donor profile (${donor.bloodGroup} - ${donor.district || 'Location'})`;
+      await createAndSendNotification(donor.user, req.user.id, 'contact_revealed', null, detailMsg);
+    }
+
+    res.json({
+      success: true,
+      donorId: donor._id,
+      unmaskedPhone: donor.phone,
+      message: 'Authorized access granted. PII unmasked.'
+    });
+  } catch (err) {
+    console.error('Error revealing donor contact:', err);
+    res.status(500).json({ message: 'Server error processing contact unmask request' });
   }
 });
 
@@ -128,7 +168,7 @@ router.post('/tuition', authMiddleware, async (req, res) => {
 });
 
 // @route   GET api/utilities/tuition
-// @desc    Get/search tuition marketplace postings
+// @desc    Get/search tuition marketplace postings (PII Protected)
 router.get('/tuition', authMiddleware, async (req, res) => {
   const { type, district, subject } = req.query;
 
@@ -150,10 +190,49 @@ router.get('/tuition', authMiddleware, async (req, res) => {
       );
     }
 
-    res.json(list);
+    // Apply PII data protection masking
+    const sanitizedList = list.map(item => sanitizeTuitionPost(item, req.user ? req.user.id : null));
+    res.json(sanitizedList);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error fetching tuition listings' });
+  }
+});
+
+// @route   POST api/utilities/tuition/reveal-contact/:id
+// @desc    Request and reveal tuition post contact number (Requires Auth & Logs Audit)
+router.post('/tuition/reveal-contact/:id', authMiddleware, async (req, res) => {
+  try {
+    const post = await db.findById('tuition_posts', req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: 'Tuition post not found' });
+    }
+
+    // Log PII unmasking audit event for SIEM / Security Log
+    await db.create('security_logs', {
+      event: 'PII_TUITION_CONTACT_UNMASKED',
+      user: req.user.id,
+      targetId: post._id,
+      details: `User ${req.user.id} requested contact unmask for Tuition: "${post.title}"`,
+      ip: req.ip || (req.headers && req.headers['x-forwarded-for']) || req.connection?.remoteAddress || '127.0.0.1'
+    });
+
+    // Notify post owner if not requester
+    const ownerId = post.user && post.user._id ? post.user._id.toString() : (post.user ? post.user.toString() : null);
+    if (ownerId && ownerId !== req.user.id) {
+      const detailMsg = `Requested and unmasked contact phone number for Tuition listing "${post.title}"`;
+      await createAndSendNotification(ownerId, req.user.id, 'contact_revealed', null, detailMsg);
+    }
+
+    res.json({
+      success: true,
+      postId: post._id,
+      unmaskedPhone: post.phone,
+      message: 'Authorized access granted. PII unmasked.'
+    });
+  } catch (err) {
+    console.error('Error revealing tuition contact:', err);
+    res.status(500).json({ message: 'Server error processing contact unmask request' });
   }
 });
 

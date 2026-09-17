@@ -74,6 +74,7 @@ app.use('/api/utilities', require('./routes/utilities'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/search', require('./routes/search'));
 app.use('/api/messages', require('./routes/messages'));
+app.use('/api/security', require('./routes/security'));
 
 // Serve frontend build static files in production if needed
 if (process.env.NODE_ENV === 'production') {

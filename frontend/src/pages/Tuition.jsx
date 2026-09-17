@@ -37,9 +37,41 @@ export default function Tuition() {
   const [area, setArea] = useState('');
   const [salary, setSalary] = useState('');
   const [phone, setPhone] = useState('');
-  const [details, setDetails] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // PII Unmasking state for tuition contacts
+  const [revealedPhones, setRevealedPhones] = useState({});
+  const [requestingId, setRequestingId] = useState(null);
+
+  const handleRequestContact = async (postId) => {
+    if (!user) {
+      alert('Please log in to request and reveal contact details (PII Protected)');
+      return;
+    }
+
+    try {
+      setRequestingId(postId);
+      const res = await fetch(`/api/utilities/tuition/reveal-contact/${postId}`, {
+        method: 'POST',
+        headers: getHeaders()
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.unmaskedPhone) {
+          setRevealedPhones(prev => ({ ...prev, [postId]: data.unmaskedPhone }));
+        }
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Authorization failed');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRequestingId(null);
+    }
+  };
 
   const districts = [
     'Dhaka', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna', 'Barisal', 'Rangpur', 'Mymensingh',
@@ -281,13 +313,25 @@ export default function Tuition() {
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
-                  <a
-                    href={`tel:${post.phone}`}
-                    className="bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 font-bold px-4 py-1.5 rounded-xl text-[10px] flex items-center gap-1 transition-colors shrink-0"
-                  >
-                    <Phone className="w-3 h-3" />
-                    <span>Contact</span>
-                  </a>
+                  {revealedPhones[post._id] || post.isMasked === false ? (
+                    <a
+                      href={`tel:${revealedPhones[post._id] || post.phone}`}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl text-[10px] flex items-center gap-1 transition-all shadow-md shadow-emerald-600/20 shrink-0 animate-fadeIn"
+                    >
+                      <Phone className="w-3 h-3 fill-current" />
+                      <span>{revealedPhones[post._id] || post.phone}</span>
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => handleRequestContact(post._id)}
+                      disabled={requestingId === post._id}
+                      className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold px-3 py-1.5 rounded-xl text-[10px] flex items-center gap-1 transition-all shrink-0 cursor-pointer disabled:opacity-50"
+                      title="Click to request and reveal contact number"
+                    >
+                      <Phone className="w-3 h-3 text-amber-400" />
+                      <span>{post.phone || '017*****890'} (Request)</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

@@ -100,6 +100,15 @@ const JobSchema = new Schema({
   link: { type: String, default: '' }
 }, { timestamps: true });
 
+// 10. Security Log Schema (For PII & SIEM Audit Trail)
+const SecurityLogSchema = new Schema({
+  event: { type: String, required: true }, // 'PII_CONTACT_UNMASKED', 'NOSQL_INJECTION_BLOCKED', etc.
+  user: { type: Schema.Types.ObjectId, ref: 'users', default: null },
+  targetId: { type: String, default: '' },
+  details: { type: String, default: '' },
+  ip: { type: String, default: '' }
+}, { timestamps: true });
+
 // Register models
 const registerModels = () => {
   try {
@@ -112,6 +121,7 @@ const registerModels = () => {
     mongoose.model('blood_donors', BloodDonorSchema);
     mongoose.model('tuition_posts', TuitionPostSchema);
     mongoose.model('jobs', JobSchema);
+    mongoose.model('security_logs', SecurityLogSchema);
     console.log('Mongoose models registered successfully.');
   } catch (err) {
     // Avoid overwrite errors in hot-reloads
@@ -120,3 +130,4 @@ const registerModels = () => {
 };
 
 module.exports = { registerModels };
+

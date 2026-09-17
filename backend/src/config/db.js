@@ -61,7 +61,7 @@ async function connectDB() {
   if (mongoURI) {
     try {
       console.log('Attempting to connect to MongoDB Atlas...');
-      await mongoose.connect(mongoURI);
+      await mongoose.connect(mongoURI, { serverSelectionTimeoutMS: 2500 });
       isMongoConnected = true;
       console.log('MongoDB Atlas Connected Successfully!');
     } catch (err) {
@@ -131,7 +131,11 @@ const db = {
               continue;
             }
           }
-          if (item[key] !== query[key]) return false;
+          if (query[key] === null) {
+            if (item[key] !== null && item[key] !== undefined && item[key] !== '') return false;
+          } else if (item[key] !== query[key]) {
+            return false;
+          }
         }
         return true;
       });
@@ -164,7 +168,7 @@ const db = {
                                   fieldPath === 'posts' || fieldPath === 'post' ? 'posts' : 
                                   fieldPath === 'comments' || fieldPath === 'comment' ? 'comments' : null;
             if (refCollection && newItem[fieldPath]) {
-              const refId = newItem[fieldPath].toString();
+              const refId = typeof newItem[fieldPath] === 'object' ? (newItem[fieldPath]._id ? newItem[fieldPath]._id.toString() : newItem[fieldPath].toString()) : newItem[fieldPath].toString();
               const refObj = (localData[refCollection] || []).find(r => r._id === refId);
               if (refObj) {
                 // Return ref object but omit password for users
