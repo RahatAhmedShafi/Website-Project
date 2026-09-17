@@ -168,7 +168,12 @@ const db = {
                                   fieldPath === 'posts' || fieldPath === 'post' ? 'posts' : 
                                   fieldPath === 'comments' || fieldPath === 'comment' ? 'comments' : null;
             if (refCollection && newItem[fieldPath]) {
-              const refId = typeof newItem[fieldPath] === 'object' ? (newItem[fieldPath]._id ? newItem[fieldPath]._id.toString() : newItem[fieldPath].toString()) : newItem[fieldPath].toString();
+              let refId;
+              if (typeof newItem[fieldPath] === 'object') {
+                refId = newItem[fieldPath]._id ? newItem[fieldPath]._id.toString() : (newItem[fieldPath].id ? newItem[fieldPath].id.toString() : newItem[fieldPath].toString());
+              } else {
+                refId = newItem[fieldPath].toString();
+              }
               const refObj = (localData[refCollection] || []).find(r => r._id === refId);
               if (refObj) {
                 // Return ref object but omit password for users

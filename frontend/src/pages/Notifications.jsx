@@ -180,6 +180,10 @@ export default function Notifications() {
             const isExpanded = Boolean(expandedIds[alert._id]);
             const isContactReveal = alert.type === 'contact_revealed';
 
+            const senderObj = alert.sender;
+            const senderId = typeof senderObj === 'object' ? (senderObj._id || senderObj.id) : senderObj;
+            const senderName = (typeof senderObj === 'object' && senderObj.name) ? senderObj.name : (senderId ? 'Vibora User' : 'Someone');
+
             return (
               <div 
                 key={alert._id}
@@ -204,12 +208,12 @@ export default function Notifications() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs text-gray-200 leading-snug">
-                        {alert.sender ? (
-                          <Link to={`/profile/${alert.sender._id}`} className="font-extrabold text-white hover:underline">
-                            {alert.sender.name}
+                        {senderId ? (
+                          <Link to={`/profile/${senderId}`} className="font-extrabold text-white hover:underline">
+                            {senderName}
                           </Link>
                         ) : (
-                          <span className="font-extrabold text-white">Someone</span>
+                          <span className="font-extrabold text-white">{senderName}</span>
                         )}{' '}
                         <span className={isContactReveal ? 'text-amber-300 font-medium' : 'text-gray-300'}>
                           {getAlertText(alert)}
@@ -275,9 +279,9 @@ export default function Notifications() {
                     {/* Action Controls & Direct Links */}
                     <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/5">
                       <div className="flex items-center gap-2">
-                        {alert.sender && (
+                        {senderId && (
                           <Link
-                            to={`/profile/${alert.sender._id}`}
+                            to={`/profile/${senderId}`}
                             className="bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1"
                           >
                             <span>View User Profile</span>
@@ -297,16 +301,16 @@ export default function Notifications() {
                       </div>
 
                       {/* Friend Request Accept/Decline */}
-                      {alert.type === 'friend_request' && alert.sender && (
+                      {alert.type === 'friend_request' && senderId && (
                         <div className="flex gap-2">
                           <button 
-                            onClick={() => handleAccept(alert.sender._id)}
+                            onClick={() => handleAccept(senderId)}
                             className="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer"
                           >
                             Accept Request
                           </button>
                           <button 
-                            onClick={() => handleDecline(alert.sender._id)}
+                            onClick={() => handleDecline(senderId)}
                             className="bg-white/5 hover:bg-white/10 text-gray-400 text-[11px] font-bold px-3.5 py-1.5 rounded-xl border border-white/5 transition-colors cursor-pointer"
                           >
                             Decline

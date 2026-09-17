@@ -11,28 +11,32 @@ const wsManager = require('./wsManager');
  */
 async function createAndSendNotification(recipientId, senderId, type, postId = null, details = null) {
   try {
+    const cleanRecipientId = typeof recipientId === 'object' ? (recipientId._id || recipientId.id || recipientId).toString() : recipientId.toString();
+    const cleanSenderId = typeof senderId === 'object' ? (senderId._id || senderId.id || senderId).toString() : senderId.toString();
+    const cleanPostId = postId ? (typeof postId === 'object' ? (postId._id || postId.id || postId).toString() : postId.toString()) : null;
+
     // Do not notify yourself
-    if (recipientId.toString() === senderId.toString()) return null;
+    if (cleanRecipientId === cleanSenderId) return null;
 
     const notification = await db.create('notifications', {
-      recipient: recipientId,
-      sender: senderId,
+      recipient: cleanRecipientId,
+      sender: cleanSenderId,
       type,
-      post: postId,
+      post: cleanPostId,
       details: details || null,
       read: false
     });
 
     // Populate sender details for WS payload
-    const sender = await db.findById('users', senderId);
+    const sender = await db.findById('users', cleanSenderId);
     let populatedNotification = { ...notification };
     if (sender) {
       const { password, ...safeSender } = sender;
       populatedNotification.sender = safeSender;
     }
 
-    if (postId) {
-      const post = await db.findById('posts', postId);
+    if (cleanPostId) {
+      const post = await db.findById('posts', cleanPostId);
       if (post) {
         populatedNotification.post = post;
       }
