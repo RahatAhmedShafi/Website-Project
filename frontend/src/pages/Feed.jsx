@@ -104,10 +104,24 @@ export default function Feed({ communityId = null }) {
     }
   };
 
-  // Read images locally using FileReader (Base64)
+  // Read images locally using FileReader (Base64) with Security Size & Type checks
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // 1. Check Image MIME type
+      if (!file.type.startsWith('image/')) {
+        alert('Invalid file format. Please select an image file (JPG, PNG, WEBP, GIF).');
+        e.target.value = '';
+        return;
+      }
+
+      // 2. Check 5MB Max File Size Limit
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size exceeds maximum allowed 5MB limit. Please choose a smaller image.');
+        e.target.value = '';
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setImage(reader.result);

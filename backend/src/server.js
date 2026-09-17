@@ -11,6 +11,8 @@ const { connectDB } = require('./config/db');
 const { registerModels } = require('./models/schemas');
 const wsManager = require('./utils/wsManager');
 
+const { xssSanitizerMiddleware } = require('./utils/sanitizer');
+
 const JWT_SECRET = process.env.JWT_SECRET || 'vibora_bangladesh_local_secret_key_12345';
 
 const app = express();
@@ -22,7 +24,8 @@ connectDB();
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '10mb' })); // Support base64 image uploads
+app.use(express.json({ limit: '5mb' })); // Support base64 image uploads (Strict 5MB Payload Limit)
+app.use(xssSanitizerMiddleware); // Global XSS Input Sanitization Middleware
 
 // Varsity Computer Security Course - Custom HTTP Security Headers & Mitigations
 app.use((req, res, next) => {

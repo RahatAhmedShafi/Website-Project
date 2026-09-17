@@ -3,6 +3,7 @@ const router = express.Router();
 const { db } = require('../config/db');
 const authMiddleware = require('../middleware/auth');
 const { createAndSendNotification } = require('../utils/notificationHelper');
+const { validateBase64Image } = require('../utils/imageSecurity');
 
 // @route   POST api/posts
 // @desc    Create a post (text and/or image, optional community, noticeCategory if isNotice is true)
@@ -10,6 +11,13 @@ router.post('/', authMiddleware, async (req, res) => {
   const { text, image, community, isNotice, noticeCategory } = req.body;
 
   try {
+    if (image) {
+      const imageValidation = validateBase64Image(image);
+      if (!imageValidation.valid) {
+        return res.status(400).json({ message: imageValidation.message });
+      }
+    }
+
     const newPost = await db.create('posts', {
       user: req.user.id,
       text: text || '',
@@ -202,7 +210,15 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
     const updateData = {};
     if (text !== undefined) updateData.text = text;
-    if (image !== undefined) updateData.image = image;
+    if (image !== undefined) {
+      if (image) {
+        const imageValidation = validateBase64Image(image);
+        if (!imageValidation.valid) {
+          return res.status(400).json({ message: imageValidation.message });
+        }
+      }
+      updateData.image = image;
+    }
 
     const updatedPost = await db.findByIdAndUpdate('posts', req.params.id, updateData, { new: true });
     

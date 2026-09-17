@@ -145,6 +145,8 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
+const { validateBase64Image } = require('../utils/imageSecurity');
+
 // @route   PUT api/auth/profile
 // @desc    Update profile
 router.put('/profile', authMiddleware, async (req, res) => {
@@ -156,7 +158,15 @@ router.put('/profile', authMiddleware, async (req, res) => {
     if (district !== undefined) updateData.district = district;
     if (skills !== undefined) updateData.skills = skills;
     if (bio !== undefined) updateData.bio = bio;
-    if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
+    if (profilePicture !== undefined) {
+      if (profilePicture) {
+        const imageValidation = validateBase64Image(profilePicture);
+        if (!imageValidation.valid) {
+          return res.status(400).json({ message: imageValidation.message });
+        }
+      }
+      updateData.profilePicture = profilePicture;
+    }
 
     const updatedUser = await db.findByIdAndUpdate('users', req.user.id, updateData, { new: true });
     const { password: _, ...userSafe } = updatedUser;
