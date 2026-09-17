@@ -79,6 +79,15 @@ app.use('/api/search', require('./routes/search'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/security', require('./routes/security'));
 
+// Global Express Error Middleware (Catch Payload Too Large & Unhandled Errors)
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.too.large' || err.status === 413 || err.statusCode === 413) {
+    return res.status(400).json({ message: 'File size exceeds maximum allowed 5MB limit. Please choose a smaller image.' });
+  }
+  console.error('Express Error Handler:', err);
+  res.status(err.status || 500).json({ message: err.message || 'Server error processing request' });
+});
+
 // Serve frontend build static files in production if needed
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../../frontend/dist')));

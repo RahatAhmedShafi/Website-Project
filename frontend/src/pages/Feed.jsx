@@ -152,6 +152,9 @@ export default function Feed({ communityId = null }) {
         setPosts([newPost, ...posts]);
         setText('');
         setImage('');
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to publish post. Image size or format is invalid.');
       }
     } catch (err) {
       console.error('Error publishing post:', err);
